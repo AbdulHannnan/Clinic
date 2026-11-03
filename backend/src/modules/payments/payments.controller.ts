@@ -3,6 +3,7 @@ import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CuidPipe } from '../../common/pipes/cuid.pipe';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN', 'DOCTOR', 'MANAGEMENT')
@@ -11,7 +12,7 @@ export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 
   @Get(':doctorId/today')
-  today(@Param('doctorId') doctorId: string) {
+  today(@Param('doctorId', CuidPipe) doctorId: string) {
     return this.payments.daySummary(doctorId);
   }
 }

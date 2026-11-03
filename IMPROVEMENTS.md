@@ -14,11 +14,10 @@ anyway so the plan is complete, but flagged as "planned" where the roadmap alrea
 
 ## 1. Security
 
-### 🟠 No input-validation DTOs yet
-`ValidationPipe({ whitelist: true, transform: true })` is wired (`main.ts:9`) but there are no
-`class-validator` DTOs because there are no write endpoints yet. Route params like `:doctorId` are
-trusted raw.
-- When write endpoints land, add DTOs with validation; validate `:doctorId` as a cuid.
+### 🟡 Request-body DTOs await write endpoints (planned)
+`ValidationPipe({ whitelist, transform })` is wired and `:doctorId` params are now validated as cuids
+(`common/pipes/cuid.pipe.ts`). Body DTOs with `class-validator` still need adding as each write
+endpoint lands (`LoginDto` is the first example).
 
 ### 🟡 Encryption key: no rotation path or secret manager
 The key is read once from a plaintext env var at boot
@@ -33,24 +32,6 @@ from a secrets manager / KMS rather than a committed-adjacent `.env`.
 ---
 
 ## 2. Correctness / Working
-
-### 🟠 `nowServing` can mislead patients
-`QueueService.publicView` (`backend/src/modules/queue/queue.service.ts:28`) falls back to the last
-`DONE` token when no one is in the room, labeling it "now serving". It also picks `lastDone` by
-`sortOrder` order, not by `finishedAt`, so it isn't reliably the most recently served.
-- Show a distinct "waiting for next patient" state; order DONE by `finishedAt` if you must show a last token.
-
-### 🟠 Patient page implies multi-doctor but only wires doctor[0]
-`frontend/src/app/[locale]/page.tsx:17` fetches the queue only for `clinic.doctors[0].id`, yet maps over
-*all* doctors and renders `<LiveQueue>` only when `queue.doctorId === d.id` (`page.tsx:42`). Any second
-doctor shows no live queue. Fine for one-doctor-per-deployment today, but the loop is misleading.
-- Either fetch a queue per doctor, or render for the single doctor explicitly.
-
-### 🟠 No refetch on socket (re)connect
-`LiveQueue` (`frontend/src/features/queue/components/LiveQueue.tsx:15`) joins on connect and then waits
-for the next server push. Between SSR and connect, or after a reconnect, the view is stale until
-something changes. Staff screens get only a `{ doctorId }` nudge and must refetch — not yet built.
-- On `connect`/reconnect, refetch the current public view (and have staff screens refetch on nudge).
 
 ### 🟡 Fractional `sortOrder` precision
 `emergencySortOrder` (`shared/src/queue.ts:46`) halves the gap between neighbors on each insert. After
@@ -84,11 +65,6 @@ under a new version without breaking existing data.)
 
 ## 4. Performance / Optimization
 
-### 🟠 Staff "nudge then everyone refetches" thundering herd
-`RealtimeGateway.queueChanged` (`realtime.gateway.ts:21`) sends staff only `{ doctorId }`, so every staff
-client refetches on each change. On a busy desk that multiplies queries.
-- Send the staff payload directly over the socket, as the public room already does.
-
 ### 🟡 `publicView` uses two queries
 `queue.service.ts` fetches the doctor and the entries separately — collapse into one `findUnique` with a
 scoped `include`/relation query.
@@ -109,18 +85,12 @@ clinic profile could use `revalidate` instead.
 
 ## 5. Testing
 
-Pure business logic is now covered: `shared/src/{queue,money,treatment}.test.ts` (15 tests) and
-`backend/test/encryption.test.ts` (2 tests). Still thin on the service layer.
-
-### 🟠 Untested services
-The NestJS services have no tests yet: `QueueService.publicView`, `PaymentsService.daySummary`,
-`NotificationsService` dedupe, `TreatmentPlansService` cron, `AuthService` login, `AuditService`.
-These need either mocked-Prisma unit tests or the DB-backed tests below.
-
-### 🟠 CI spins up Postgres but no test uses it
-`.github/workflows/ci.yml` starts `postgres:17` and runs `prisma migrate deploy`, but `npm test` only
-runs DB-free unit tests — so the DB only validates that migrations apply.
-- Add Prisma-backed service/e2e tests (seed a test DB, assert `publicView`/`daySummary` end to end).
+Covered now: `shared/src/{queue,money,treatment}.test.ts` (15 tests); and backend (17 tests):
+`encryption.test.ts`, `enum-parity.test.ts`, `services.test.ts` (mocked-Prisma units for `QueueService`,
+`PaymentsService`, `NotificationsService` dedupe, `AuthService`), and `queue.db.test.ts` — DB-backed
+tests that run against the CI Postgres via `TEST_DATABASE_URL` (skipped locally when unset). CI now sets
+`TEST_DATABASE_URL`, so the provisioned Postgres is actually exercised end to end.
+Remaining gaps: `TreatmentPlansService` cron and `AuditService` (thin wrappers), and coverage.
 
 ### 🟡 No coverage gate and no frontend tests
 Add a coverage tool (`c8`) with a threshold, and at least a smoke/render test for `LiveQueue` and the
@@ -146,5 +116,5 @@ request logging and a readiness signal before the pilot (Phase 5).
 2. ~~Fix `clinicDay` timezone and the dedupe race~~ ✅ **done**.
 3. ~~Harden CORS/env validation, add helmet + throttler~~ ✅ **done**.
 4. ~~Encryption version byte + allergies methods + decrypt error handling~~ ✅ **done** (AAD binding still open).
-5. **Grow the test suite** — ✅ business logic done; DB-backed service tests in CI still open.
+5. ~~Grow the test suite (business logic + DB-backed service tests in CI)~~ ✅ **done**.
 6. ~~ESLint/Prettier in CI, enum parity, remove stray prototype~~ ✅ **done**.

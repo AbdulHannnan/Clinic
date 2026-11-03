@@ -28,6 +28,7 @@ export interface PublicQueue {
   doctorId: string;
   status: 'AVAILABLE' | 'BREAK' | 'CLOSED';
   minutesPerPatient: number;
-  nowServing: string | null;
+  nowServing: string | null; // the token actually in the room, or null when nobody is
+  lastServed: string | null; // most recently finished token, by finish time
   waiting: { token: string; sortOrder: number }[];
 }

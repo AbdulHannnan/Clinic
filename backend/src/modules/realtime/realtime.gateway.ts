@@ -38,8 +38,10 @@ export class RealtimeGateway {
     }
   }
 
-  queueChanged(doctorId: string, publicView: unknown) {
+  queueChanged(doctorId: string, publicView: unknown, staffView?: unknown) {
     this.server.to(`public:${doctorId}`).emit(RealtimeEvent.QUEUE_UPDATED, publicView);
-    this.server.to(`staff:${doctorId}`).emit(RealtimeEvent.QUEUE_UPDATED, { doctorId });
+    // Push the full staff view when the caller has it, so each staff client renders without a
+    // refetch; fall back to a bare nudge only when no payload is supplied.
+    this.server.to(`staff:${doctorId}`).emit(RealtimeEvent.QUEUE_UPDATED, staffView ?? { doctorId });
   }
 }

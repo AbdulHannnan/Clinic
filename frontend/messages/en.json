@@ -8,6 +8,8 @@
   "Queue": {
     "nowServing": "Now serving",
     "waiting": "Waiting",
+    "lastServed": "Last seen #{token}",
+    "noneYet": "No one in yet",
     "status": { "AVAILABLE": "Available", "BREAK": "On break", "CLOSED": "Closed" }
   },
   "Staff": {

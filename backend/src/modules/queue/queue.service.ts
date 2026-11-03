@@ -21,12 +21,18 @@ export class QueueService {
     const entries = await this.entriesToday(doctorId);
     const visible = entries.filter((e) => e.type !== QueueType.EMERGENCY);
     const inRoom = visible.find((e) => e.status === QueueStatus.IN_ROOM);
-    const lastDone = visible.filter((e) => e.status === QueueStatus.DONE).at(-1);
+    // Most recently finished patient, by when they actually finished — not by queue order.
+    const lastServed = visible
+      .filter((e) => e.status === QueueStatus.DONE)
+      .sort((a, b) => (a.finishedAt?.getTime() ?? 0) - (b.finishedAt?.getTime() ?? 0))
+      .at(-1);
     return {
       doctorId,
       status: publicDoctorStatus(doctor.status as DoctorStatus, entries),
       minutesPerPatient: doctor.minutesPerPatient,
-      nowServing: (inRoom ?? lastDone)?.token ?? null,
+      // Only a patient actually in the room is "now serving"; otherwise the public sees nobody is in yet.
+      nowServing: inRoom?.token ?? null,
+      lastServed: lastServed?.token ?? null,
       waiting: visible.filter((e) => e.status === QueueStatus.WAITING).map((e) => ({ token: e.token, sortOrder: e.sortOrder })),
     };
   }

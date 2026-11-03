@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { RealtimeEvent } from '@clinic/shared';
-import type { PublicQueue } from '@/lib/api';
+import { api, type PublicQueue } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
 
 const statusClass = { AVAILABLE: 'bg-ok/15 text-ok', BREAK: 'bg-warn/15 text-warn', CLOSED: 'bg-surface-2 text-muted' };
@@ -15,11 +15,21 @@ export function LiveQueue({ initial }: { initial: PublicQueue }) {
   useEffect(() => {
     const socket = getSocket();
     const join = () => socket.emit('join', `public:${initial.doctorId}`);
+    // On every (re)connect, rejoin and pull the current state: pushes can be missed while disconnected
+    // and the SSR snapshot goes stale between render and the socket connecting.
+    const refresh = async () => {
+      join();
+      try {
+        setQ(await api<PublicQueue>(`/queue/${initial.doctorId}/public`));
+      } catch {
+        // Keep the last known queue if the refetch fails; the next push will correct it.
+      }
+    };
     join();
-    socket.on('connect', join);
+    socket.on('connect', refresh);
     socket.on(RealtimeEvent.QUEUE_UPDATED, setQ);
     return () => {
-      socket.off('connect', join);
+      socket.off('connect', refresh);
       socket.off(RealtimeEvent.QUEUE_UPDATED, setQ);
     };
   }, [initial.doctorId]);
@@ -28,9 +38,20 @@ export function LiveQueue({ initial }: { initial: PublicQueue }) {
     <div className="grid grid-cols-2 gap-2">
       <div className="rounded-xl bg-surface-2 px-3 py-2">
         <div className="text-xs font-bold uppercase text-muted">{t('nowServing')}</div>
-        <div className="font-mono text-3xl font-semibold" dir="ltr">
-          {q.nowServing ? `#${q.nowServing}` : '–'}
-        </div>
+        {q.nowServing ? (
+          <div className="font-mono text-3xl font-semibold" dir="ltr">
+            #{q.nowServing}
+          </div>
+        ) : (
+          <div>
+            <div className="text-lg font-semibold text-muted">{t('noneYet')}</div>
+            {q.lastServed && (
+              <div className="text-xs text-muted" dir="ltr">
+                {t('lastServed', { token: q.lastServed })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="rounded-xl bg-surface-2 px-3 py-2">
         <div className="text-xs font-bold uppercase text-muted">{t('waiting')}</div>

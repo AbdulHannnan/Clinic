@@ -11,13 +11,23 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const t = await getTranslations('Home');
 
   let clinic: ClinicProfile | null;
-  let queue: PublicQueue | null = null;
+  let queues: Record<string, PublicQueue> = {};
   try {
     clinic = await api<ClinicProfile>('/clinic');
-    if (clinic.doctors[0]) queue = await api<PublicQueue>(`/queue/${clinic.doctors[0].id}/public`);
+    // One queue per doctor, fetched independently so one doctor's failure doesn't blank the page.
+    const results = await Promise.all(
+      clinic.doctors.map(async (d) => {
+        try {
+          return [d.id, await api<PublicQueue>(`/queue/${d.id}/public`)] as const;
+        } catch {
+          return [d.id, null] as const;
+        }
+      }),
+    );
+    queues = Object.fromEntries(results.filter((r): r is readonly [string, PublicQueue] => r[1] !== null));
   } catch {
     clinic = null;
-    queue = null;
+    queues = {};
   }
 
   return (
@@ -40,7 +50,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               {locale === 'ur' && d.specialtyUr ? d.specialtyUr : d.specialty} · {d.qualifications}
             </p>
           </div>
-          {queue?.doctorId === d.id && <LiveQueue initial={queue} />}
+          {queues[d.id] && <LiveQueue initial={queues[d.id]} />}
           <div className="flex items-center justify-between">
             <span className="font-mono font-semibold" dir="ltr">
               {t('fee')}: Rs {d.fee.toLocaleString('en-US')}

@@ -8,6 +8,8 @@
   "Queue": {
     "nowServing": "موجودہ نمبر",
     "waiting": "انتظار میں",
+    "lastServed": "آخری نمبر #{token}",
+    "noneYet": "ابھی کوئی اندر نہیں",
     "status": { "AVAILABLE": "دستیاب", "BREAK": "وقفے پر", "CLOSED": "بند" }
   },
   "Staff": {
