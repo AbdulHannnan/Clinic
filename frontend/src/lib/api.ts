@@ -1,7 +1,9 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}/api${path}`, { cache: 'no-store', ...init });
+  // Default to no-store for live data; callers opt into caching via `cache` or Next's `next`.
+  const cacheHinted = !!init && ('cache' in init || 'next' in init);
+  const res = await fetch(`${API_URL}/api${path}`, { ...(cacheHinted ? {} : { cache: 'no-store' }), ...init });
   if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${path}`);
   return res.json() as Promise<T>;
 }

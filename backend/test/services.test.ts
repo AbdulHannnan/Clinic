@@ -20,8 +20,7 @@ test('QueueService.publicView: in-room token serves, emergencies hidden, lastSer
   ];
   const svc = new QueueService(
     fakePrisma({
-      doctor: { findUnique: async () => ({ id: 'd', status: 'AVAILABLE', minutesPerPatient: 10 }) },
-      queueEntry: { findMany: async () => entries },
+      doctor: { findUnique: async () => ({ id: 'd', status: 'AVAILABLE', minutesPerPatient: 10, queueEntries: entries }) },
     }),
   );
   const view = await svc.publicView('d');
@@ -37,8 +36,14 @@ test('QueueService.publicView: in-room token serves, emergencies hidden, lastSer
 test('QueueService.publicView: nobody in the room means nowServing is null', async () => {
   const svc = new QueueService(
     fakePrisma({
-      doctor: { findUnique: async () => ({ id: 'd', status: 'AVAILABLE', minutesPerPatient: 10 }) },
-      queueEntry: { findMany: async () => [{ type: 'ONLINE', status: 'DONE', token: '3', sortOrder: 3, finishedAt: new Date() }] },
+      doctor: {
+        findUnique: async () => ({
+          id: 'd',
+          status: 'AVAILABLE',
+          minutesPerPatient: 10,
+          queueEntries: [{ type: 'ONLINE', status: 'DONE', token: '3', sortOrder: 3, finishedAt: new Date() }],
+        }),
+      },
     }),
   );
   const view = await svc.publicView('d');

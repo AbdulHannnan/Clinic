@@ -18,12 +18,17 @@ export class PatientsService {
     return this.prisma.patient.upsert({ where: { phone }, update: {}, create: { phone, name } });
   }
 
+  // Binds each blob to this patient and field, so ciphertext can't be moved to another record.
+  private aad(patientId: string, field: 'history' | 'allergies') {
+    return `patient:${patientId}:${field}`;
+  }
+
   async setHistory(patientId: string, history: string) {
-    await this.prisma.patient.update({ where: { id: patientId }, data: { historyEnc: this.crypto.encrypt(history) } });
+    await this.prisma.patient.update({ where: { id: patientId }, data: { historyEnc: this.crypto.encrypt(history, this.aad(patientId, 'history')) } });
   }
 
   async setAllergies(patientId: string, allergies: string) {
-    await this.prisma.patient.update({ where: { id: patientId }, data: { allergiesEnc: this.crypto.encrypt(allergies) } });
+    await this.prisma.patient.update({ where: { id: patientId }, data: { allergiesEnc: this.crypto.encrypt(allergies, this.aad(patientId, 'allergies')) } });
   }
 
   /** Reading medical history is always recorded against the staff member who viewed it. */
@@ -40,10 +45,10 @@ export class PatientsService {
   }
 
   /** Decrypt, but turn a corrupt/foreign blob into an audited 503 instead of an opaque crash. */
-  private async safeDecrypt(blob: Uint8Array | null, patientId: string, field: string, actorId?: string | null): Promise<string | null> {
+  private async safeDecrypt(blob: Uint8Array | null, patientId: string, field: 'history' | 'allergies', actorId?: string | null): Promise<string | null> {
     if (!blob) return null;
     try {
-      return this.crypto.decrypt(blob);
+      return this.crypto.decrypt(blob, this.aad(patientId, field));
     } catch (err) {
       this.log.error(`Failed to decrypt ${field} for patient ${patientId}`, err as Error);
       await this.audit.record({ actorId, action: `${field}.decrypt_error`, entity: 'Patient', entityId: patientId });

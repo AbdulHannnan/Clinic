@@ -16,9 +16,13 @@ export class QueueService {
 
   /** What patients at home see. No names, no emergencies. */
   async publicView(doctorId: string) {
-    const doctor = await this.prisma.doctor.findUnique({ where: { id: doctorId } });
+    // One query: the doctor plus today's entries in sort order.
+    const doctor = await this.prisma.doctor.findUnique({
+      where: { id: doctorId },
+      include: { queueEntries: { where: { day: today() }, orderBy: { sortOrder: 'asc' } } },
+    });
     if (!doctor) throw new NotFoundException('Doctor not found');
-    const entries = await this.entriesToday(doctorId);
+    const entries = doctor.queueEntries;
     const visible = entries.filter((e) => e.type !== QueueType.EMERGENCY);
     const inRoom = visible.find((e) => e.status === QueueStatus.IN_ROOM);
     // Most recently finished patient, by when they actually finished — not by queue order.

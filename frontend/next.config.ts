@@ -3,6 +3,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
-const config: NextConfig = {};
+// `standalone` emits a self-contained server bundle (.next/standalone) for a small Docker image.
+const config: NextConfig = { output: 'standalone' };
 
 export default withNextIntl(config);

@@ -12,6 +12,14 @@ test('medical text round-trips and is not stored in plain text', () => {
   assert.equal(svc.decrypt(enc), plain);
 });
 
+test('AAD binds ciphertext to its context: the same aad decrypts, a different one fails', () => {
+  const svc = new EncryptionService(new ConfigService({ DATA_ENCRYPTION_KEY: randomBytes(32).toString('base64') }));
+  const enc = svc.encrypt('Allergic to penicillin.', 'patient:abc:allergies');
+  assert.equal(svc.decrypt(enc, 'patient:abc:allergies'), 'Allergic to penicillin.');
+  assert.throws(() => svc.decrypt(enc, 'patient:xyz:allergies')); // moved to another patient
+  assert.throws(() => svc.decrypt(enc)); // aad dropped entirely
+});
+
 test('blob carries a version byte and an unknown version is rejected', () => {
   const svc = new EncryptionService(new ConfigService({ DATA_ENCRYPTION_KEY: randomBytes(32).toString('base64') }));
   const enc = svc.encrypt('BP normal');

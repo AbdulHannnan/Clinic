@@ -13,7 +13,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   let clinic: ClinicProfile | null;
   let queues: Record<string, PublicQueue> = {};
   try {
-    clinic = await api<ClinicProfile>('/clinic');
+    // Branding changes rarely; cache it briefly instead of refetching on every request.
+    clinic = await api<ClinicProfile>('/clinic', { next: { revalidate: 60 } });
     // One queue per doctor, fetched independently so one doctor's failure doesn't blank the page.
     const results = await Promise.all(
       clinic.doctors.map(async (d) => {
