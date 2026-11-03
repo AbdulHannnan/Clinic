@@ -2,16 +2,31 @@
   "name": "clinic",
   "private": true,
   "description": "Clinic queue, consultation and finance system. One copy is deployed per doctor.",
-  "workspaces": ["shared", "backend", "frontend"],
-  "engines": { "node": ">=22" },
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build:shared": "npm run build -w shared",
     "dev:backend": "npm run build:shared && npm run start:dev -w backend",
     "dev:frontend": "npm run build:shared && npm run dev -w frontend",
     "build": "npm run build -w shared && npm run build -w backend && npm run build -w frontend",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "format:check": "prettier --check \"**/*.{ts,tsx,mjs,json}\"",
     "test": "npm run test --workspaces --if-present",
     "db:migrate": "npm run db:migrate -w backend",
     "db:seed": "npm run db:seed -w backend"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.10",
+    "typescript-eslint": "^8.72.1"
   }
 }

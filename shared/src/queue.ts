@@ -53,7 +53,16 @@ export function emergencySortOrder(queue: QueueItem[]): number {
   return (lo + hi) / 2;
 }
 
-/** The clinic's calendar day as a UTC-midnight Date, which is how a Postgres DATE column stores it. */
-export function clinicDay(at: Date = new Date()): Date {
-  return new Date(Date.UTC(at.getFullYear(), at.getMonth(), at.getDate()));
+/** The clinic's time zone. One deployment serves one clinic; override per deployment if needed. */
+export const CLINIC_TIME_ZONE = 'Asia/Karachi';
+
+/**
+ * The clinic's calendar day as a UTC-midnight Date, which is how a Postgres DATE column stores it.
+ * The date is resolved in an explicit IANA time zone via Intl, so it never depends on the server's
+ * local time (an unset/UTC `TZ` used to roll the day over at the wrong hour).
+ */
+export function clinicDay(at: Date = new Date(), timeZone: string = CLINIC_TIME_ZONE): Date {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(at);
+  const part = (type: 'year' | 'month' | 'day') => Number(parts.find((p) => p.type === type)!.value);
+  return new Date(Date.UTC(part('year'), part('month') - 1, part('day')));
 }

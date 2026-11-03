@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { emergencySortOrder, patientsAheadAll, patientsAheadPublic, publicDoctorStatus } from './queue';
+import { clinicDay, emergencySortOrder, estimateWaitMinutes, patientsAheadAll, patientsAheadPublic, publicDoctorStatus } from './queue';
 import { balance } from './money';
 import { reminderDue } from './treatment';
 
@@ -23,8 +23,46 @@ test('public sees a break while an emergency is inside', () => {
   assert.equal(publicDoctorStatus('AVAILABLE', [{ sortOrder: 1, type: 'EMERGENCY', status: 'IN_ROOM' }]), 'BREAK');
 });
 
+test('publicDoctorStatus: closed stays closed, a normal patient in the room stays available', () => {
+  assert.equal(publicDoctorStatus('CLOSED', [...q]), 'CLOSED');
+  assert.equal(publicDoctorStatus('AVAILABLE', [...q]), 'AVAILABLE'); // the IN_ROOM one is ONLINE
+  assert.equal(publicDoctorStatus('BREAK', []), 'BREAK');
+});
+
+test('patientsAheadPublic hides every waiting emergency, not just one', () => {
+  const withEmergencies = [
+    { sortOrder: 8, type: 'ONLINE', status: 'IN_ROOM' },
+    { sortOrder: 8.3, type: 'EMERGENCY', status: 'WAITING' },
+    { sortOrder: 8.6, type: 'EMERGENCY', status: 'WAITING' },
+    { sortOrder: 9, type: 'WALKIN', status: 'WAITING' },
+    { sortOrder: 10, type: 'ONLINE', status: 'WAITING' },
+  ] as const;
+  const me = withEmergencies[4];
+  assert.equal(patientsAheadPublic([...withEmergencies], me), 1); // only the walk-in is visible
+  assert.equal(patientsAheadAll([...withEmergencies], me), 3); // walk-in + two emergencies
+});
+
+test('estimateWaitMinutes: people ahead, half a slot for the one inside, and a break buffer', () => {
+  const me = q[2]; // waiting at sortOrder 10, one WAITING ahead, one IN_ROOM
+  assert.equal(estimateWaitMinutes([...q], me, 10, 'AVAILABLE'), 1 * 10 + 5); // 1 ahead + half slot
+  assert.equal(estimateWaitMinutes([...q], me, 10, 'BREAK'), 1 * 10 + 5 + 10); // + break buffer
+});
+
+test('emergencySortOrder handles an empty queue and an all-emergency queue', () => {
+  assert.equal(emergencySortOrder([]), 1);
+  const order = emergencySortOrder([{ sortOrder: 5, type: 'EMERGENCY', status: 'WAITING' }]);
+  assert.ok(order > 5); // slots after the existing emergency, not before it
+});
+
 test('discount after online payment means a refund is owed', () => {
   assert.equal(balance({ status: 'DONE', fee: 1500, discount: 750, paid: 1500, refunded: 0 }), -750);
+});
+
+test('clinicDay resolves the date in the clinic time zone, not the server local time', () => {
+  // 20:00 UTC on Nov 3 is already 01:00 on Nov 4 in Asia/Karachi (UTC+5).
+  assert.equal(clinicDay(new Date('2026-11-03T20:00:00Z'), 'Asia/Karachi').toISOString(), '2026-11-04T00:00:00.000Z');
+  // 18:00 UTC on Nov 3 is still 23:00 on Nov 3 in Asia/Karachi.
+  assert.equal(clinicDay(new Date('2026-11-03T18:00:00Z'), 'Asia/Karachi').toISOString(), '2026-11-03T00:00:00.000Z');
 });
 
 test('treatment reminders: 2 days before, on the day, missed', () => {

@@ -11,7 +11,11 @@ export class PaymentsService {
   async daySummary(doctorId: string, day = today()) {
     const entries = await this.prisma.queueEntry.findMany({ where: { doctorId, day }, include: { payments: true } });
     const byMethod: Record<PaymentMethod, number> = { CASH: 0, CARD: 0, ONLINE: 0 };
-    let collected = 0, discount = 0, due = 0, toRefund = 0, patients = 0;
+    let collected = 0,
+      discount = 0,
+      due = 0,
+      toRefund = 0,
+      patients = 0;
 
     for (const e of entries) {
       const paid = e.payments.filter((p) => p.kind === PaymentKind.PAYMENT).reduce((a, p) => a + p.amount, 0);

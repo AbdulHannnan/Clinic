@@ -1,0 +1,7 @@
+node_modules/
+**/dist/
+**/.next/
+**/*.tsbuildinfo
+package-lock.json
+frontend/next-env.d.ts
+docs/

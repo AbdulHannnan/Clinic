@@ -10,13 +10,14 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   setRequestLocale(locale);
   const t = await getTranslations('Home');
 
-  let clinic: ClinicProfile | null = null;
+  let clinic: ClinicProfile | null;
   let queue: PublicQueue | null = null;
   try {
     clinic = await api<ClinicProfile>('/clinic');
     if (clinic.doctors[0]) queue = await api<PublicQueue>(`/queue/${clinic.doctors[0].id}/public`);
   } catch {
     clinic = null;
+    queue = null;
   }
 
   return (

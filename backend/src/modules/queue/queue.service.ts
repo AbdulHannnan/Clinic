@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { QueueStatus, QueueType, clinicDay, publicDoctorStatus, type DoctorStatus } from '@clinic/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 
-export const today = () => clinicDay();
+// Resolve "today" in the clinic's time zone (CLINIC_TIME_ZONE env overrides the default), never the server's.
+export const today = () => clinicDay(new Date(), process.env.CLINIC_TIME_ZONE);
 
 /** Today's queue for one doctor: the single list that online bookings, walk-ins and emergencies share. */
 @Injectable()

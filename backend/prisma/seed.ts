@@ -1,6 +1,7 @@
 // Sample data for local development only. Doctor, clinic and patients are fictional.
 import { PrismaClient, type QueueType, type QueueStatus } from '@prisma/client';
 import { clinicDay } from '@clinic/shared';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 const day = clinicDay();
@@ -16,11 +17,23 @@ async function main() {
     (await prisma.doctor.findFirst()) ??
     (await prisma.doctor.create({
       data: {
-        name: 'Dr. Ayesha Siddiqui', nameUr: 'ڈاکٹر عائشہ صدیقی',
-        specialty: 'General Physician', specialtyUr: 'جنرل فزیشن',
-        qualifications: 'MBBS, FCPS (Medicine)', fee: 1500, minutesPerPatient: 10, status: 'AVAILABLE',
+        name: 'Dr. Ayesha Siddiqui',
+        nameUr: 'ڈاکٹر عائشہ صدیقی',
+        specialty: 'General Physician',
+        specialtyUr: 'جنرل فزیشن',
+        qualifications: 'MBBS, FCPS (Medicine)',
+        fee: 1500,
+        minutesPerPatient: 10,
+        status: 'AVAILABLE',
       },
     }));
+
+  // Development login: phone 03000000000 / password admin123. Change before any real use.
+  await prisma.staffUser.upsert({
+    where: { phone: '03000000000' },
+    update: {},
+    create: { name: 'Clinic Admin', phone: '03000000000', role: 'ADMIN', passwordHash: await bcrypt.hash('admin123', 10), doctorId: doctor.id },
+  });
 
   if ((await prisma.preset.count()) === 0) {
     const notes = ['Viral fever', 'Throat infection', 'Seasonal allergy', 'Acidity / gastritis', 'BP normal', 'Rest for 3 days', 'Drink plenty of fluids'];
@@ -47,11 +60,22 @@ async function main() {
     for (const [i, [name, phone, type, status]] of rows.entries()) {
       const patient = await prisma.patient.upsert({ where: { phone }, update: {}, create: { name, phone } });
       await prisma.queueEntry.create({
-        data: { doctorId: doctor.id, patientId: patient.id, day, token: String(i + 8), sortOrder: i + 8, type, status, arrived: status !== 'WAITING', fee: doctor.fee },
+        data: {
+          doctorId: doctor.id,
+          patientId: patient.id,
+          day,
+          token: String(i + 8),
+          sortOrder: i + 8,
+          type,
+          status,
+          arrived: status !== 'WAITING',
+          fee: doctor.fee,
+        },
       });
     }
   }
   console.log(`Seeded clinic with doctor ${doctor.id}`);
+  console.log('Dev staff login: phone 03000000000 / password admin123');
 }
 
 main().finally(() => prisma.$disconnect());

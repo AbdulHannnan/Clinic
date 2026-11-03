@@ -28,7 +28,9 @@ export function LiveQueue({ initial }: { initial: PublicQueue }) {
     <div className="grid grid-cols-2 gap-2">
       <div className="rounded-xl bg-surface-2 px-3 py-2">
         <div className="text-xs font-bold uppercase text-muted">{t('nowServing')}</div>
-        <div className="font-mono text-3xl font-semibold" dir="ltr">{q.nowServing ? `#${q.nowServing}` : '–'}</div>
+        <div className="font-mono text-3xl font-semibold" dir="ltr">
+          {q.nowServing ? `#${q.nowServing}` : '–'}
+        </div>
       </div>
       <div className="rounded-xl bg-surface-2 px-3 py-2">
         <div className="text-xs font-bold uppercase text-muted">{t('waiting')}</div>

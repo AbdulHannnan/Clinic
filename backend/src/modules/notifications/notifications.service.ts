@@ -18,10 +18,24 @@ export class NotificationsService {
   async send(opts: { kind: Kind; patientId?: string; channels: ChannelName[]; dedupeKey?: string } & OutgoingMessage) {
     for (const channel of opts.channels) {
       const dedupeKey = opts.dedupeKey ? `${opts.dedupeKey}:${channel}` : undefined;
-      if (dedupeKey && (await this.prisma.notification.findUnique({ where: { dedupeKey } }))) continue;
-      const row = await this.prisma.notification.create({
-        data: { kind: opts.kind, channel, phone: opts.phone, patientId: opts.patientId, payload: { template: opts.template, params: opts.params }, dedupeKey },
-      });
+      // Let the unique constraint on dedupeKey decide: a concurrent duplicate loses the insert race
+      // and is skipped, instead of both passing a check-then-insert and one crashing.
+      let row;
+      try {
+        row = await this.prisma.notification.create({
+          data: {
+            kind: opts.kind,
+            channel,
+            phone: opts.phone,
+            patientId: opts.patientId,
+            payload: { template: opts.template, params: opts.params },
+            dedupeKey,
+          },
+        });
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') continue; // already sent
+        throw err;
+      }
       try {
         const { providerId } = await this.providers[channel].send(opts);
         await this.prisma.notification.update({ where: { id: row.id }, data: { status: 'SENT', providerId, sentAt: new Date() } });

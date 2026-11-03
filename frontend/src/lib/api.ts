@@ -11,7 +11,17 @@ export interface ClinicProfile {
   address: string;
   phone: string | null;
   brandColor: string;
-  doctors: { id: string; name: string; nameUr: string | null; specialty: string; specialtyUr: string | null; qualifications: string; fee: number; minutesPerPatient: number; status: string }[];
+  doctors: {
+    id: string;
+    name: string;
+    nameUr: string | null;
+    specialty: string;
+    specialtyUr: string | null;
+    qualifications: string;
+    fee: number;
+    minutesPerPatient: number;
+    status: string;
+  }[];
 }
 
 export interface PublicQueue {

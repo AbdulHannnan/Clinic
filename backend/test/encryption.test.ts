@@ -11,3 +11,12 @@ test('medical text round-trips and is not stored in plain text', () => {
   assert.ok(!Buffer.from(enc).toString('utf8').includes('diabetes'));
   assert.equal(svc.decrypt(enc), plain);
 });
+
+test('blob carries a version byte and an unknown version is rejected', () => {
+  const svc = new EncryptionService(new ConfigService({ DATA_ENCRYPTION_KEY: randomBytes(32).toString('base64') }));
+  const enc = svc.encrypt('BP normal');
+  assert.equal(enc[0], 1); // current version prefix
+  const foreign = Buffer.from(enc);
+  foreign[0] = 2; // pretend it was written by a future scheme
+  assert.throws(() => svc.decrypt(foreign), /Unsupported encryption version 2/);
+});
