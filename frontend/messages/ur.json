@@ -1,0 +1,18 @@
+{
+  "Common": { "switchLanguage": "English", "poweredBy": "Powered by ClinicQ", "live": "لائیو" },
+  "Home": {
+    "book": "اپوائنٹمنٹ بک کریں",
+    "fee": "فیس",
+    "offline": "ابھی کلینک سے رابطہ نہیں ہو پا رہا۔ براہِ کرم ایک منٹ بعد دوبارہ کوشش کریں۔"
+  },
+  "Queue": {
+    "nowServing": "موجودہ نمبر",
+    "waiting": "انتظار میں",
+    "status": { "AVAILABLE": "دستیاب", "BREAK": "وقفے پر", "CLOSED": "بند" }
+  },
+  "Staff": {
+    "reception": "انتظامیہ",
+    "doctor": "ڈاکٹر",
+    "comingSoon": "یہ اسکرین ابھی تیار ہو رہی ہے۔ طریقہ کار دیکھنے کے لیے پروٹوٹائپ استعمال کریں۔"
+  }
+}

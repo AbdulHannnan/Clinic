@@ -1,0 +1,13 @@
+# Local services for development, for anyone without PostgreSQL installed.
+# Production runs one stack per doctor; see docs/deployment.md.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: clinic
+      POSTGRES_PASSWORD: clinic
+      POSTGRES_DB: clinic_dev
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+volumes:
+  pgdata:

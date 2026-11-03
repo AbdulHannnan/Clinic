@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Secrets: only the .example files are committed
+.env
+.env.*
+!.env.example
+infra/clinics/*.env
+!infra/clinics/example.env
+
+.DS_Store
+*.log

@@ -1,0 +1,320 @@
+// One database per doctor's deployment. Tables still carry doctorId so a
+// clinic with two doctors can share one deployment later.
+// Money is stored in whole rupees. Medical text is encrypted by the app
+// (EncryptionService) before it reaches these *Enc columns.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- clinic & staff ----------
+
+model ClinicSettings {
+  id          Int      @id @default(1)
+  name        String
+  address     String
+  phone       String?
+  logoUrl     String?
+  brandColor  String   @default("#0e6e5d")
+  defaultLang Lang     @default(EN)
+  updatedAt   DateTime @updatedAt
+}
+
+model Doctor {
+  id                String       @id @default(cuid())
+  name              String
+  nameUr            String?
+  specialty         String
+  specialtyUr       String?
+  qualifications    String
+  registrationNo    String?
+  fee               Int
+  minutesPerPatient Int          @default(10)
+  status            DoctorStatus @default(CLOSED)
+  createdAt         DateTime     @default(now())
+
+  staff          StaffUser[]
+  queueEntries   QueueEntry[]
+  visits         Visit[]
+  treatmentPlans TreatmentPlan[]
+}
+
+model StaffUser {
+  id           String    @id @default(cuid())
+  name         String
+  phone        String    @unique
+  role         StaffRole
+  passwordHash String
+  active       Boolean   @default(true)
+  doctorId     String?
+  doctor       Doctor?   @relation(fields: [doctorId], references: [id])
+  createdAt    DateTime  @default(now())
+
+  auditLogs AuditLog[]
+}
+
+// ---------- patients ----------
+
+model Patient {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String   @unique
+  birthYear    Int?
+  gender       Gender?
+  historyEnc   Bytes? // patient-written medical history, encrypted
+  allergiesEnc Bytes?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  queueEntries   QueueEntry[]
+  visits         Visit[]
+  treatmentPlans TreatmentPlan[]
+  notifications  Notification[]
+}
+
+// ---------- queue ----------
+
+model QueueEntry {
+  id          String      @id @default(cuid())
+  doctorId    String
+  doctor      Doctor      @relation(fields: [doctorId], references: [id])
+  patientId   String
+  patient     Patient     @relation(fields: [patientId], references: [id])
+  day         DateTime    @db.Date
+  token       String // "13" for normal patients, "E1" for emergencies
+  sortOrder   Float // fractional so emergencies and skips can be slotted between
+  type        QueueType
+  status      QueueStatus @default(WAITING)
+  arrived     Boolean     @default(false)
+  symptoms    String?
+  reminded    Boolean     @default(false) // the "3 patients before you" message went out
+  createdAt   DateTime    @default(now())
+  calledAt    DateTime?
+  finishedAt  DateTime?
+
+  // money for this visit
+  fee            Int
+  discount       Int             @default(0)
+  discountReason DiscountReason?
+  discountById   String?
+
+  treatmentPlanId String?
+  treatmentPlan   TreatmentPlan? @relation(fields: [treatmentPlanId], references: [id])
+
+  payments Payment[]
+  visit    Visit?
+
+  @@unique([doctorId, day, token])
+  @@index([doctorId, day, status])
+}
+
+// ---------- consultation ----------
+
+model Visit {
+  id           String             @id @default(cuid())
+  queueEntryId String             @unique
+  queueEntry   QueueEntry         @relation(fields: [queueEntryId], references: [id])
+  doctorId     String
+  doctor       Doctor             @relation(fields: [doctorId], references: [id])
+  patientId    String
+  patient      Patient            @relation(fields: [patientId], references: [id])
+  notesEnc     Bytes? // diagnosis and advice, encrypted
+  followUp     String?
+  createdAt    DateTime           @default(now())
+  items        PrescriptionItem[]
+}
+
+model PrescriptionItem {
+  id           String @id @default(cuid())
+  visitId      String
+  visit        Visit  @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  medicine     String
+  dose         String // morning + afternoon + night, e.g. "1+0+1"
+  days         String
+  instructions String?
+  position     Int
+}
+
+/// Quick-pick notes and medicines shown on the doctor's screen.
+model Preset {
+  id       String     @id @default(cuid())
+  kind     PresetKind
+  label    String
+  data     Json?
+  position Int        @default(0)
+}
+
+// ---------- finance ----------
+
+model Payment {
+  id           String        @id @default(cuid())
+  queueEntryId String
+  queueEntry   QueueEntry    @relation(fields: [queueEntryId], references: [id])
+  kind         PaymentKind
+  method       PaymentMethod
+  amount       Int // always positive; kind says which way the money moved
+  reference    String? // gateway transaction id for online payments
+  byStaffId    String?
+  createdAt    DateTime      @default(now())
+
+  @@index([createdAt])
+}
+
+// ---------- long-term treatment ----------
+
+model TreatmentPlan {
+  id           String             @id @default(cuid())
+  patientId    String
+  patient      Patient            @relation(fields: [patientId], references: [id])
+  doctorId     String
+  doctor       Doctor             @relation(fields: [doctorId], references: [id])
+  condition    TreatmentCondition
+  months       Int
+  intervalDays Int
+  startDate    DateTime
+  nextVisit    DateTime
+  visitsDone   Int                @default(0)
+  status       PlanStatus         @default(ACTIVE)
+  createdById  String?
+  createdAt    DateTime           @default(now())
+
+  queueEntries QueueEntry[]
+
+  @@index([status, nextVisit])
+}
+
+// ---------- messages & audit ----------
+
+model Notification {
+  id         String             @id @default(cuid())
+  patientId  String?
+  patient    Patient?           @relation(fields: [patientId], references: [id])
+  phone      String
+  channel    Channel
+  kind       NotificationKind
+  payload    Json
+  status     NotificationStatus @default(QUEUED)
+  providerId String?
+  error      String?
+  dedupeKey  String?            @unique // stops the same reminder going out twice
+  createdAt  DateTime           @default(now())
+  sentAt     DateTime?
+}
+
+/// Who did what and when: payments, discounts, refunds and every view of medical history.
+model AuditLog {
+  id        String     @id @default(cuid())
+  actorId   String?
+  actor     StaffUser? @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  meta      Json?
+  createdAt DateTime   @default(now())
+
+  @@index([entity, entityId])
+}
+
+// ---------- enums (mirrored in shared/src) ----------
+
+enum Lang {
+  EN
+  UR
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum StaffRole {
+  ADMIN
+  DOCTOR
+  MANAGEMENT
+}
+
+enum DoctorStatus {
+  AVAILABLE
+  BREAK
+  CLOSED
+}
+
+enum QueueType {
+  ONLINE
+  WALKIN
+  EMERGENCY
+}
+
+enum QueueStatus {
+  WAITING
+  IN_ROOM
+  DONE
+  NO_SHOW
+  CANCELLED
+}
+
+enum DiscountReason {
+  FOLLOW_UP
+  NEEDY
+  STAFF_FAMILY
+  SENIOR
+  OTHER
+}
+
+enum PaymentKind {
+  PAYMENT
+  REFUND
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+}
+
+enum PresetKind {
+  NOTE
+  MEDICINE
+}
+
+enum TreatmentCondition {
+  DIABETES
+  TB
+  HYPERTENSION
+  HEPATITIS_C
+  THYROID
+  OTHER
+}
+
+enum PlanStatus {
+  ACTIVE
+  COMPLETED
+  STOPPED
+}
+
+enum Channel {
+  WHATSAPP
+  SMS
+  APP
+}
+
+enum NotificationKind {
+  BOOKING_CONFIRMED
+  THREE_AHEAD
+  YOUR_TURN
+  PRESCRIPTION_READY
+  PLAN_STARTED
+  PLAN_REMINDER
+  PLAN_MISSED
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}

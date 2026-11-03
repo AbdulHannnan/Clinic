@@ -1,0 +1,18 @@
+{
+  "Common": { "switchLanguage": "اردو", "poweredBy": "Powered by ClinicQ", "live": "Live" },
+  "Home": {
+    "book": "Book an appointment",
+    "fee": "Fee",
+    "offline": "Can’t reach the clinic right now. Please try again in a minute."
+  },
+  "Queue": {
+    "nowServing": "Now serving",
+    "waiting": "Waiting",
+    "status": { "AVAILABLE": "Available", "BREAK": "On break", "CLOSED": "Closed" }
+  },
+  "Staff": {
+    "reception": "Management",
+    "doctor": "Doctor",
+    "comingSoon": "This screen is being built. Use the prototype to review the flow."
+  }
+}
