@@ -17,6 +17,8 @@ export class VisitsService {
   ) {}
 
   record(queueEntryId: string, doctorId: string, patientId: string, rx: PrescriptionInput) {
+    // The visit and its prescription items are one nested create, so Prisma writes them in a single
+    // implicit transaction — a half-saved visit with missing items can never be committed.
     return this.prisma.visit.create({
       data: {
         queueEntryId,

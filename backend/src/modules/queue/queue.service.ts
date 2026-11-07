@@ -14,6 +14,25 @@ export class QueueService {
     return this.prisma.queueEntry.findMany({ where: { doctorId, day: today() }, orderBy: { sortOrder: 'asc' } });
   }
 
+  /**
+   * Finish whoever is in the room and call the next waiting patient (lowest sortOrder). Both steps run
+   * in one transaction so the queue is never left with two people in the room or none finished — if the
+   * second step fails, the first rolls back. Returns the called entry, or null when nobody is waiting.
+   */
+  callNext(doctorId: string) {
+    const day = today();
+    const now = new Date();
+    return this.prisma.$transaction(async (tx) => {
+      await tx.queueEntry.updateMany({
+        where: { doctorId, day, status: QueueStatus.IN_ROOM },
+        data: { status: QueueStatus.DONE, finishedAt: now },
+      });
+      const next = await tx.queueEntry.findFirst({ where: { doctorId, day, status: QueueStatus.WAITING }, orderBy: { sortOrder: 'asc' } });
+      if (!next) return null;
+      return tx.queueEntry.update({ where: { id: next.id }, data: { status: QueueStatus.IN_ROOM, calledAt: now } });
+    });
+  }
+
   /** What patients at home see. No names, no emergencies. */
   async publicView(doctorId: string) {
     // One query: the doctor plus today's entries in sort order.

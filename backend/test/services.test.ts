@@ -52,6 +52,79 @@ test('QueueService.publicView: nobody in the room means nowServing is null', asy
   assert.equal(view.lastServed, '3');
 });
 
+test('QueueService.callNext: finishes the in-room patient and calls the next, in one transaction', async () => {
+  const seen: { finished?: Record<string, unknown>; called?: Record<string, unknown> } = {};
+  const next = { id: 'q2', status: 'WAITING', sortOrder: 2 };
+  const tx = {
+    queueEntry: {
+      updateMany: async (args: { data: Record<string, unknown> }) => {
+        seen.finished = args.data;
+        return { count: 1 };
+      },
+      findFirst: async () => next,
+      update: async (args: { data: Record<string, unknown> }) => {
+        seen.called = args.data;
+        return { ...next, ...args.data };
+      },
+    },
+  };
+  const svc = new QueueService(fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) }));
+  const res = await svc.callNext('d');
+  assert.equal(seen.finished?.status, 'DONE');
+  assert.equal(seen.called?.status, 'IN_ROOM');
+  assert.equal((res as { status: string }).status, 'IN_ROOM');
+});
+
+test('QueueService.callNext: returns null (and calls nobody) when the queue is empty', async () => {
+  const tx = {
+    queueEntry: {
+      updateMany: async () => ({ count: 0 }),
+      findFirst: async () => null,
+      update: async () => {
+        throw new Error('must not call anyone when nobody is waiting');
+      },
+    },
+  };
+  const svc = new QueueService(fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) }));
+  assert.equal(await svc.callNext('d'), null);
+});
+
+test('PaymentsService.applyDiscount: an online overpayment is refunded in the same transaction', async () => {
+  const entry = { id: 'q1', status: 'DONE', fee: 1500, discount: 0, payments: [{ kind: 'PAYMENT', method: 'ONLINE', amount: 1500 }] };
+  let refund: Record<string, unknown> | undefined;
+  const tx = {
+    queueEntry: { findUniqueOrThrow: async () => entry, update: async () => ({}) },
+    payment: {
+      create: async (args: { data: Record<string, unknown> }) => {
+        refund = args.data;
+        return refund;
+      },
+    },
+  };
+  const svc = new PaymentsService(fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) }));
+  await svc.applyDiscount('q1', 750, 'NEEDY' as never, 'staff1');
+  assert.equal(refund?.kind, 'REFUND');
+  assert.equal(refund?.amount, 750); // paid 1500, now owes only 750 → refund 750
+  assert.equal(refund?.method, 'ONLINE');
+});
+
+test('PaymentsService.applyDiscount: no refund when the patient has not overpaid', async () => {
+  const entry = { id: 'q1', status: 'DONE', fee: 1500, discount: 0, payments: [] }; // nothing collected yet
+  let created = false;
+  const tx = {
+    queueEntry: { findUniqueOrThrow: async () => entry, update: async () => ({}) },
+    payment: {
+      create: async () => {
+        created = true;
+        return {};
+      },
+    },
+  };
+  const svc = new PaymentsService(fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) }));
+  await svc.applyDiscount('q1', 500, 'SENIOR' as never);
+  assert.equal(created, false);
+});
+
 test('PaymentsService.daySummary: collected, due, and per-method totals', async () => {
   const entries = [
     { status: 'DONE', fee: 1500, discount: 0, payments: [{ kind: 'PAYMENT', method: 'CASH', amount: 1500 }] },
