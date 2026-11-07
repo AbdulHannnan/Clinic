@@ -24,21 +24,9 @@ A key-version byte is now in the blob and `docs/deployment.md` documents the rot
 Remaining (deploy-time, Phase 5): source `DATA_ENCRYPTION_KEY` from a secrets manager / KMS rather than
 a plain env file.
 
-### 🟡 Secrets hygiene (currently OK)
-`.gitignore` correctly excludes `.env`, `.env.*`, and `infra/clinics/*.env` while keeping the
-`.example` files. `.env.example` ships an empty `DATA_ENCRYPTION_KEY=`. Good — keep it that way.
-
 ---
 
 ## 2. Correctness / Working
-
-### ✅ Fractional `sortOrder` precision (hardened)
-`emergencySortOrder` (`shared/src/queue.ts`) still slots an emergency at the midpoint between its
-neighbors, but fresh positions now start from a wide integer step (`SORT_STEP = 1000`) so the halving
-has far more room before floats get close. Two pure helpers back a periodic-rebalance scheme for the
-queue write path: `needsRebalance(queue)` flags when adjacent waiting gaps shrink toward a collision,
-and `rebalanceSortOrders(count)` hands back evenly spaced integer positions to reassign. All three are
-covered in `shared/src/queue.test.ts`. The write endpoints just call these when they land.
 
 ### 🟡 Treatment-plan lifecycle is incomplete (planned — Phase 4)
 The cron sends reminders (`backend/src/modules/treatment-plans/treatment-plans.service.ts:21`) but
@@ -52,15 +40,7 @@ track it.
 
 ---
 
-## 3. Performance / Optimization
-
-### 🟡 `daySummary` aggregates in JS (acceptable)
-`payments.service.ts` loads every entry+payment for the day and reduces in memory. Fine at clinic scale;
-revisit with SQL aggregation only if volumes grow. Left as-is intentionally.
-
----
-
-## 4. Testing
+## 3. Testing
 
 Covered now: `shared/src/{queue,money,treatment}.test.ts` (15 tests); and backend (17 tests):
 `encryption.test.ts`, `enum-parity.test.ts`, `services.test.ts` (mocked-Prisma units for `QueueService`,
@@ -74,7 +54,7 @@ runs under Vitest (`frontend/src/**/*.test.tsx`). Remaining gaps: `TreatmentPlan
 
 ---
 
-## 5. Tooling, DX & Housekeeping
+## 4. Tooling, DX & Housekeeping
 
 ### 🟡 Docker images added — not yet build-tested
 `backend/Dockerfile` and `frontend/Dockerfile` (multi-stage, built from the repo root) plus a
