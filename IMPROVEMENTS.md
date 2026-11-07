@@ -32,11 +32,13 @@ a plain env file.
 
 ## 2. Correctness / Working
 
-### 🟡 Fractional `sortOrder` precision (edge cases tested)
-`emergencySortOrder` (`shared/src/queue.ts`) halves the gap between neighbors on each insert; after many
-insertions floats could collide (harmless at a day's volume). Empty-queue and all-emergency cases are
-now tested. A gap-based integer scheme or periodic rebalance would be sturdier — do it with the queue
-write endpoints, which don't exist yet.
+### ✅ Fractional `sortOrder` precision (hardened)
+`emergencySortOrder` (`shared/src/queue.ts`) still slots an emergency at the midpoint between its
+neighbors, but fresh positions now start from a wide integer step (`SORT_STEP = 1000`) so the halving
+has far more room before floats get close. Two pure helpers back a periodic-rebalance scheme for the
+queue write path: `needsRebalance(queue)` flags when adjacent waiting gaps shrink toward a collision,
+and `rebalanceSortOrders(count)` hands back evenly spaced integer positions to reassign. All three are
+covered in `shared/src/queue.test.ts`. The write endpoints just call these when they land.
 
 ### 🟡 Treatment-plan lifecycle is incomplete (planned — Phase 4)
 The cron sends reminders (`backend/src/modules/treatment-plans/treatment-plans.service.ts:21`) but
@@ -84,5 +86,5 @@ runs under Vitest (`frontend/src/**/*.test.tsx`). Remaining gaps: `TreatmentPlan
 ## Remaining work
 
 All the foundation and hardening items above are done. What's left is planned-feature work
-(write-endpoint DTOs, treatment-plan lifecycle, multi-step transactions, `sortOrder` rebalance)
-or deploy-time ops (secrets manager, validate Docker builds).
+(write-endpoint DTOs, treatment-plan lifecycle, multi-step transactions) or deploy-time ops
+(secrets manager, validate Docker builds).

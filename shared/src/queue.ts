@@ -48,9 +48,37 @@ export function emergencySortOrder(queue: QueueItem[]): number {
   const inRoom = queue.find((x) => x.status === QueueStatus.IN_ROOM);
   const firstNormal = wl.find((x) => x.type !== QueueType.EMERGENCY);
   const lastEmergency = wl.filter((x) => x.type === QueueType.EMERGENCY && (!firstNormal || x.sortOrder < firstNormal.sortOrder)).pop();
-  const lo = lastEmergency?.sortOrder ?? inRoom?.sortOrder ?? (firstNormal ? firstNormal.sortOrder - 1 : 0);
-  const hi = firstNormal?.sortOrder ?? lo + 2;
+  const lo = lastEmergency?.sortOrder ?? inRoom?.sortOrder ?? (firstNormal ? firstNormal.sortOrder - SORT_STEP : 0);
+  const hi = firstNormal?.sortOrder ?? lo + 2 * SORT_STEP;
   return (lo + hi) / 2;
+}
+
+/**
+ * Wide, even integer spacing for fresh sort positions. Emergencies and skips are slotted between
+ * neighbors by midpoint (`emergencySortOrder`), which halves the gap each time; starting from a wide
+ * integer step leaves plenty of room before floats get close enough to collide.
+ */
+export const SORT_STEP = 1000;
+
+/**
+ * True when two adjacent waiting entries sit so close that the next midpoint insert between them risks
+ * a float collision. The queue write path checks this and calls `rebalanceSortOrders` when it trips.
+ */
+export function needsRebalance(queue: QueueItem[], minGap = 1e-6): boolean {
+  const orders = waiting(queue)
+    .map((x) => x.sortOrder)
+    .sort((a, b) => a - b);
+  for (let i = 1; i < orders.length; i++) if (orders[i] - orders[i - 1] < minGap) return true;
+  return false;
+}
+
+/**
+ * Fresh, evenly spaced integer sort positions for `count` entries already in their intended order:
+ * `[SORT_STEP, 2*SORT_STEP, ...]`. Reassigning positions with this — at the start of a day, or once
+ * `needsRebalance` trips — restores wide gaps so there is always room to insert between any two entries.
+ */
+export function rebalanceSortOrders(count: number): number[] {
+  return Array.from({ length: count }, (_, i) => (i + 1) * SORT_STEP);
 }
 
 /** The clinic's time zone. One deployment serves one clinic; override per deployment if needed. */

@@ -1,6 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clinicDay, emergencySortOrder, estimateWaitMinutes, patientsAheadAll, patientsAheadPublic, publicDoctorStatus } from './queue';
+import {
+  clinicDay,
+  emergencySortOrder,
+  estimateWaitMinutes,
+  needsRebalance,
+  patientsAheadAll,
+  patientsAheadPublic,
+  publicDoctorStatus,
+  rebalanceSortOrders,
+  SORT_STEP,
+} from './queue';
 import { balance } from './money';
 import { reminderDue } from './treatment';
 
@@ -49,9 +59,36 @@ test('estimateWaitMinutes: people ahead, half a slot for the one inside, and a b
 });
 
 test('emergencySortOrder handles an empty queue and an all-emergency queue', () => {
-  assert.equal(emergencySortOrder([]), 1);
+  assert.equal(emergencySortOrder([]), SORT_STEP); // first slot on a fresh queue, one wide step in
   const order = emergencySortOrder([{ sortOrder: 5, type: 'EMERGENCY', status: 'WAITING' }]);
   assert.ok(order > 5); // slots after the existing emergency, not before it
+});
+
+test('needsRebalance trips only once adjacent waiting gaps shrink toward collision', () => {
+  const roomy = [
+    { sortOrder: 1000, type: 'ONLINE', status: 'WAITING' },
+    { sortOrder: 2000, type: 'ONLINE', status: 'WAITING' },
+  ] as const;
+  assert.equal(needsRebalance([...roomy]), false);
+  const tight = [
+    { sortOrder: 1000, type: 'ONLINE', status: 'WAITING' },
+    { sortOrder: 1000 + 1e-9, type: 'EMERGENCY', status: 'WAITING' },
+  ] as const;
+  assert.equal(needsRebalance([...tight]), true);
+  // Non-waiting entries (done/in-room) are ignored, even when their positions sit right on top of each other.
+  const settled = [
+    { sortOrder: 1, type: 'ONLINE', status: 'DONE' },
+    { sortOrder: 1, type: 'ONLINE', status: 'IN_ROOM' },
+  ] as const;
+  assert.equal(needsRebalance([...settled]), false);
+});
+
+test('rebalanceSortOrders hands back wide, evenly spaced integer positions in order', () => {
+  assert.deepEqual(rebalanceSortOrders(3), [1000, 2000, 3000]);
+  assert.deepEqual(rebalanceSortOrders(0), []);
+  // The result restores a queue that needsRebalance flagged.
+  const rebalanced = rebalanceSortOrders(2).map((sortOrder) => ({ sortOrder, type: 'ONLINE', status: 'WAITING' }) as const);
+  assert.equal(needsRebalance(rebalanced), false);
 });
 
 test('discount after online payment means a refund is owed', () => {
