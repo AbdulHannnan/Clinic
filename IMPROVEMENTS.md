@@ -80,17 +80,9 @@ runs under Vitest (`frontend/src/**/*.test.tsx`). Remaining gaps: `TreatmentPlan
 (no Docker in the dev environment) — validate with `docker build` before the pilot. See
 `docs/deployment.md`.
 
----
+--
+## Remaining work
 
-## Suggested order of attack
-
-1. ~~Auth + guards + audit writes~~ ✅ **done**.
-2. ~~Fix `clinicDay` timezone and the dedupe race~~ ✅ **done**.
-3. ~~Harden CORS/env validation, add helmet + throttler~~ ✅ **done**.
-4. ~~Encryption version byte + allergies methods + decrypt error handling~~ ✅ **done** (AAD binding still open).
-5. ~~Grow the test suite (business logic + DB-backed service tests in CI)~~ ✅ **done**.
-6. ~~ESLint/Prettier in CI, enum parity, remove stray prototype~~ ✅ **done**.
-7. ~~Low items: AAD binding, single-query `publicView`, Urdu-font/caching, coverage + frontend test,
-   observability, Docker images~~ ✅ **done**. Remaining are planned-feature work (write-endpoint DTOs,
-   treatment-plan lifecycle, multi-step transactions, `sortOrder` rebalance) or deploy-time ops
-   (secrets manager, validate Docker builds).
+All the foundation and hardening items above are done. What's left is planned-feature work
+(write-endpoint DTOs, treatment-plan lifecycle, multi-step transactions, `sortOrder` rebalance)
+or deploy-time ops (secrets manager, validate Docker builds).
