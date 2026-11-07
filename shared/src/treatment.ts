@@ -19,12 +19,36 @@ export function addMonths(date: Date, months: number): Date {
   return d;
 }
 
+export function addDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * DAY_MS);
+}
+
 export function planEndDate(start: Date, months: number): Date {
   return addMonths(start, months);
 }
 
 export function planTotalVisits(start: Date, months: number, intervalDays: number): number {
   return Math.floor((planEndDate(start, months).getTime() - start.getTime()) / (intervalDays * DAY_MS)) + 1;
+}
+
+export interface PlanProgress {
+  visitsDone: number;
+  startDate: Date;
+  nextVisit: Date;
+  months: number;
+  intervalDays: number;
+}
+
+/**
+ * The plan state after a check-up is actually attended: one more visit done, the next visit scheduled
+ * `intervalDays` after the one just attended, and whether the course is now complete (all visits done).
+ * A completed plan keeps its existing `nextVisit` — there is nothing further to schedule. Progression is
+ * attendance-driven, so a missed visit never advances a plan; the morning cron just keeps reminding.
+ */
+export function completeTreatmentVisit(plan: PlanProgress, at: Date = new Date()): { visitsDone: number; nextVisit: Date; done: boolean } {
+  const visitsDone = plan.visitsDone + 1;
+  const done = visitsDone >= planTotalVisits(plan.startDate, plan.months, plan.intervalDays);
+  return { visitsDone, nextVisit: done ? plan.nextVisit : addDays(at, plan.intervalDays), done };
 }
 
 export type ReminderKind = 'TWO_DAYS_BEFORE' | 'ON_THE_DAY' | 'MISSED';

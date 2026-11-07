@@ -6,6 +6,7 @@ import { QueueService } from '../src/modules/queue/queue.service';
 import { PaymentsService } from '../src/modules/payments/payments.service';
 import { NotificationsService } from '../src/modules/notifications/notifications.service';
 import { AuthService } from '../src/modules/auth/auth.service';
+import { TreatmentPlansService } from '../src/modules/treatment-plans/treatment-plans.service';
 
 // Hand-rolled Prisma doubles: each test passes only the methods the service under test calls.
 const fakePrisma = (overrides: Record<string, unknown>) => overrides as never;
@@ -138,4 +139,34 @@ test('AuthService.login: an inactive staff member cannot log in', async () => {
   const prisma = fakePrisma({ staffUser: { findUnique: async () => staff } });
   const svc = new AuthService(prisma, { signAsync: async () => 't' } as never);
   await assert.rejects(() => svc.login('0300', 'secret'));
+});
+
+test('TreatmentPlansService.recordVisit: advances an active plan, completing it on the final visit', async () => {
+  const start = new Date('2026-01-01T00:00:00Z');
+  // 6-month / 30-day plan = 7 visits; this is the 7th, so it completes.
+  const plan = { id: 'p1', status: 'ACTIVE', visitsDone: 6, startDate: start, nextVisit: start, months: 6, intervalDays: 30 };
+  let saved: Record<string, unknown> | undefined;
+  const tx = {
+    treatmentPlan: {
+      findUnique: async () => plan,
+      update: async ({ data }: { data: Record<string, unknown> }) => {
+        saved = data;
+        return { ...plan, ...data };
+      },
+    },
+  };
+  const prisma = fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) });
+  const svc = new TreatmentPlansService(prisma, {} as never);
+
+  const res = await svc.recordVisit('p1', new Date('2026-06-01T00:00:00Z'));
+  assert.equal(saved?.visitsDone, 7);
+  assert.equal(saved?.status, 'COMPLETED');
+  assert.equal((res as { status: string }).status, 'COMPLETED');
+});
+
+test('TreatmentPlansService.recordVisit: a non-active plan is rejected', async () => {
+  const tx = { treatmentPlan: { findUnique: async () => ({ id: 'p', status: 'STOPPED' }), update: async () => ({}) } };
+  const prisma = fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) });
+  const svc = new TreatmentPlansService(prisma, {} as never);
+  await assert.rejects(() => svc.recordVisit('p'));
 });

@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { reminderDue } from '@clinic/shared';
+import { completeTreatmentVisit, reminderDue } from '@clinic/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -38,5 +38,20 @@ export class TreatmentPlansService {
     }
     this.log.log(`Treatment reminders checked: ${plans.length} plans, ${sent} due`);
     return sent;
+  }
+
+  /**
+   * Record that a plan check-up was attended: advance `visitsDone` and `nextVisit`, and flip `status`
+   * to `COMPLETED` on the final visit. Read-modify-write is wrapped in a transaction so two concurrent
+   * records can't both increment off the same stale count. The visit write path calls this when a
+   * queue entry carrying a `treatmentPlanId` is finished.
+   */
+  recordVisit(planId: string, at: Date = new Date()) {
+    return this.prisma.$transaction(async (tx) => {
+      const plan = await tx.treatmentPlan.findUnique({ where: { id: planId } });
+      if (!plan || plan.status !== 'ACTIVE') throw new NotFoundException('Active treatment plan not found');
+      const { visitsDone, nextVisit, done } = completeTreatmentVisit(plan, at);
+      return tx.treatmentPlan.update({ where: { id: planId }, data: { visitsDone, nextVisit, status: done ? 'COMPLETED' : 'ACTIVE' } });
+    });
   }
 }

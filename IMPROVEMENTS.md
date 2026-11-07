@@ -14,12 +14,6 @@ anyway so the plan is complete, but flagged as "planned" where the roadmap alrea
 
 ## 1. Correctness / Working
 
-### 🟡 Treatment-plan lifecycle is incomplete (planned — Phase 4)
-The cron sends reminders (`backend/src/modules/treatment-plans/treatment-plans.service.ts:21`) but
-nothing advances `nextVisit`, increments `visitsDone`, or flips `status` to `COMPLETED`. MISSED
-reminders are correctly deduped to once per `nextVisit`, but a plan never progresses. Expected for now —
-track it.
-
 ### 🟡 No transactions around future multi-step writes
 "Call next patient", payment+refund, and visit+prescription will each touch multiple rows. Wrap them in
 `prisma.$transaction` when built.
@@ -53,4 +47,4 @@ runs under Vitest (`frontend/src/**/*.test.tsx`). Remaining gaps: `TreatmentPlan
 ## Remaining work
 
 All the foundation and hardening items above are done. What's left is planned-feature work
-(treatment-plan lifecycle, multi-step transactions) or deploy-time ops (validate Docker builds).
+(multi-step transactions) or deploy-time ops (validate Docker builds).
