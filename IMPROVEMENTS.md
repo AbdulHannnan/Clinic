@@ -12,21 +12,7 @@ anyway so the plan is complete, but flagged as "planned" where the roadmap alrea
 
 ---
 
-## 1. Security
-
-### 🟡 Request-body DTOs await write endpoints (planned)
-`ValidationPipe({ whitelist, transform })` is wired and `:doctorId` params are now validated as cuids
-(`common/pipes/cuid.pipe.ts`). Body DTOs with `class-validator` still need adding as each write
-endpoint lands (`LoginDto` is the first example).
-
-### 🟡 Encryption key: secret manager (rotation path documented)
-A key-version byte is now in the blob and `docs/deployment.md` documents the rotate-in-place procedure.
-Remaining (deploy-time, Phase 5): source `DATA_ENCRYPTION_KEY` from a secrets manager / KMS rather than
-a plain env file.
-
----
-
-## 2. Correctness / Working
+## 1. Correctness / Working
 
 ### 🟡 Treatment-plan lifecycle is incomplete (planned — Phase 4)
 The cron sends reminders (`backend/src/modules/treatment-plans/treatment-plans.service.ts:21`) but
@@ -40,7 +26,7 @@ track it.
 
 ---
 
-## 3. Testing
+## 2. Testing
 
 Covered now: `shared/src/{queue,money,treatment}.test.ts` (15 tests); and backend (17 tests):
 `encryption.test.ts`, `enum-parity.test.ts`, `services.test.ts` (mocked-Prisma units for `QueueService`,
@@ -54,7 +40,7 @@ runs under Vitest (`frontend/src/**/*.test.tsx`). Remaining gaps: `TreatmentPlan
 
 ---
 
-## 4. Tooling, DX & Housekeeping
+## 3. Tooling, DX & Housekeeping
 
 ### 🟡 Docker images added — not yet build-tested
 `backend/Dockerfile` and `frontend/Dockerfile` (multi-stage, built from the repo root) plus a
@@ -62,9 +48,9 @@ runs under Vitest (`frontend/src/**/*.test.tsx`). Remaining gaps: `TreatmentPlan
 (no Docker in the dev environment) — validate with `docker build` before the pilot. See
 `docs/deployment.md`.
 
---
+---
+
 ## Remaining work
 
 All the foundation and hardening items above are done. What's left is planned-feature work
-(write-endpoint DTOs, treatment-plan lifecycle, multi-step transactions) or deploy-time ops
-(secrets manager, validate Docker builds).
+(treatment-plan lifecycle, multi-step transactions) or deploy-time ops (validate Docker builds).

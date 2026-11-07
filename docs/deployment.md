@@ -29,9 +29,26 @@ docker build -f frontend/Dockerfile -t clinic-frontend .
 > Run `docker build` once and adjust — Prisma on Alpine needs `openssl`/`libc6-compat` (already added),
 > and the monorepo layout puts the Next server at `frontend/server.js` inside the standalone bundle.
 
+## Secrets
+
+`DATABASE_URL`, `DATA_ENCRYPTION_KEY` and `JWT_SECRET` can each be supplied as a mounted file instead
+of a plain env var, using the `<NAME>_FILE` convention (`loadFileSecrets` in `backend/src/config/env.ts`
+resolves them at startup, before validation). This is how Docker secrets, Kubernetes secrets and a Vault
+agent expose values, so production sources them from a secrets manager rather than an env file:
+
+```yaml
+# docker-compose / swarm
+environment:
+  DATA_ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
+  JWT_SECRET_FILE: /run/secrets/jwt_secret
+secrets: [encryption_key, jwt_secret]
+```
+
+A directly set `<NAME>` wins if both are present, and the trailing newline a secret file usually ends
+with is trimmed.
+
 ## Rotating `DATA_ENCRYPTION_KEY`
 
 Stored blobs begin with a version byte (`EncryptionService.VERSION`), so a future key or algorithm can
 coexist with old data: bump the version, decrypt-with-old / re-encrypt-with-new in a one-off migration,
-then drop the old key. For production, source the key from a secrets manager / KMS rather than a plain
-env file.
+then drop the old key.

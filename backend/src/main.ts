@@ -2,8 +2,11 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { loadFileSecrets } from './config/env';
 
 async function bootstrap() {
+  // Pull any `<NAME>_FILE` secrets into the environment before AppModule validates it.
+  loadFileSecrets();
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
   app.use(helmet());
