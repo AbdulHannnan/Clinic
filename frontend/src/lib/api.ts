@@ -26,6 +26,63 @@ export interface ClinicProfile {
   }[];
 }
 
+export type StaffRole = 'ADMIN' | 'DOCTOR' | 'MANAGEMENT';
+
+export interface StaffPrincipal {
+  id: string;
+  role: StaffRole;
+  name: string;
+  doctorId: string | null;
+}
+
+export interface LoginResponse {
+  token: string;
+  staff: StaffPrincipal;
+}
+
+export type QueueEntryType = 'ONLINE' | 'WALKIN' | 'EMERGENCY';
+export type QueueEntryStatus = 'WAITING' | 'IN_ROOM' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
+
+export interface StaffQueueEntry {
+  id: string;
+  token: string;
+  name: string;
+  type: QueueEntryType;
+  status: QueueEntryStatus;
+  arrived: boolean;
+  sortOrder: number;
+  symptoms: string | null;
+}
+
+export interface StaffQueue {
+  doctorId: string;
+  clinicName: string | null;
+  doctor: {
+    id: string;
+    name: string;
+    nameUr: string | null;
+    specialty: string;
+    specialtyUr: string | null;
+    qualifications: string;
+  };
+  status: 'AVAILABLE' | 'BREAK' | 'CLOSED';
+  minutesPerPatient: number;
+  seenToday: number;
+  waitingCount: number;
+  current: StaffQueueEntry | null;
+  upNext: StaffQueueEntry[];
+}
+
+export interface FinanceSummary {
+  day: string;
+  patients: number;
+  collected: number;
+  discount: number;
+  due: number;
+  toRefund: number;
+  byMethod: { CASH: number; CARD: number; ONLINE: number };
+}
+
 export interface PublicQueue {
   doctorId: string;
   status: 'AVAILABLE' | 'BREAK' | 'CLOSED';

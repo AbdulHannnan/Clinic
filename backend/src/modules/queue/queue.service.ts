@@ -33,6 +33,58 @@ export class QueueService {
     });
   }
 
+  /**
+   * The doctor's own view of today's queue: full names, every type (including emergencies), who is in
+   * the room now and who is up next. Unlike publicView this is staff-only and must sit behind auth.
+   */
+  async staffView(doctorId: string) {
+    const [doctor, settings] = await Promise.all([
+      this.prisma.doctor.findUnique({
+        where: { id: doctorId },
+        include: {
+          queueEntries: {
+            where: { day: today() },
+            orderBy: { sortOrder: 'asc' },
+            include: { patient: { select: { name: true } } },
+          },
+        },
+      }),
+      this.prisma.clinicSettings.findUnique({ where: { id: 1 }, select: { name: true } }),
+    ]);
+    if (!doctor) throw new NotFoundException('Doctor not found');
+    const map = (e: (typeof doctor.queueEntries)[number]) => ({
+      id: e.id,
+      token: e.token,
+      name: e.patient.name,
+      type: e.type,
+      status: e.status,
+      arrived: e.arrived,
+      sortOrder: e.sortOrder,
+      symptoms: e.symptoms,
+    });
+    const entries = doctor.queueEntries;
+    const current = entries.find((e) => e.status === QueueStatus.IN_ROOM) ?? null;
+    const upNext = entries.filter((e) => e.status === QueueStatus.WAITING);
+    return {
+      doctorId,
+      clinicName: settings?.name ?? null,
+      doctor: {
+        id: doctor.id,
+        name: doctor.name,
+        nameUr: doctor.nameUr,
+        specialty: doctor.specialty,
+        specialtyUr: doctor.specialtyUr,
+        qualifications: doctor.qualifications,
+      },
+      status: doctor.status as DoctorStatus,
+      minutesPerPatient: doctor.minutesPerPatient,
+      seenToday: entries.filter((e) => e.status === QueueStatus.DONE).length,
+      waitingCount: upNext.length,
+      current: current ? map(current) : null,
+      upNext: upNext.map(map),
+    };
+  }
+
   /** What patients at home see. No names, no emergencies. */
   async publicView(doctorId: string) {
     // One query: the doctor plus today's entries in sort order.

@@ -16,5 +16,40 @@
     "reception": "Management",
     "doctor": "Doctor",
     "comingSoon": "This screen is being built. Use the prototype to review the flow."
+  },
+  "Auth": {
+    "title": "Clinic staff",
+    "subtitle": "Sign in to the management desk or the doctor’s room.",
+    "phone": "Phone",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "invalid": "Wrong phone or password.",
+    "failed": "Couldn’t sign in. Please try again.",
+    "devHint": "Development login: 03000000000 / admin123"
+  },
+  "Doctor": {
+    "live": "Live",
+    "loading": "Loading the queue…",
+    "loadFailed": "Couldn’t load the queue. Please try again.",
+    "signedOut": "Please sign in to open the doctor’s room.",
+    "goToLogin": "Go to sign in",
+    "signOut": "Sign out",
+    "noDoctor": "This account isn’t linked to a doctor.",
+    "seenToday": "Seen today",
+    "waiting": "Waiting",
+    "earnedToday": "Earned today",
+    "minsPerPatient": "{mins} min per patient",
+    "status": { "AVAILABLE": "Available", "BREAK": "On break", "CLOSED": "Closed" },
+    "type": { "ONLINE": "Online", "WALKIN": "Walk-in", "EMERGENCY": "Emergency" },
+    "inRoom": "In the room",
+    "doneNext": "Done · call next",
+    "startClinic": "Start clinic",
+    "working": "Working…",
+    "noPatient": "No one in the room. Call the next patient.",
+    "queueEmpty": "The queue is empty.",
+    "upNext": "Up next",
+    "arrived": "Arrived",
+    "notArrived": "Not arrived"
   }
 }

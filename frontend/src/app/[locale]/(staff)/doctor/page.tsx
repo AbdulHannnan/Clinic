@@ -1,13 +1,8 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Card } from '@/components/ui/Card';
+import { setRequestLocale } from 'next-intl/server';
+import { DoctorConsole } from '@/features/doctor/components/DoctorConsole';
 
+/** The doctor's room. Data and auth are resolved on the client (staff token + live socket). */
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   setRequestLocale((await params).locale);
-  const t = await getTranslations('Staff');
-  return (
-    <Card className="flex flex-col gap-2">
-      <h1 className="text-xl font-bold">{t('doctor')}</h1>
-      <p className="text-muted">{t('comingSoon')}</p>
-    </Card>
-  );
+  return <DoctorConsole />;
 }
