@@ -73,6 +73,42 @@ export interface StaffQueue {
   upNext: StaffQueueEntry[];
 }
 
+export interface DeskEntry {
+  id: string;
+  token: string;
+  name: string;
+  phone: string;
+  type: QueueEntryType;
+  status: QueueEntryStatus;
+  arrived: boolean;
+  fee: number;
+  discount: number;
+  paid: number;
+  refunded: number;
+  balance: number;
+}
+
+export interface DeskQueue {
+  doctorId: string;
+  clinicName: string | null;
+  doctor: { id: string; name: string; nameUr: string | null; specialty: string; specialtyUr: string | null };
+  status: 'AVAILABLE' | 'BREAK' | 'CLOSED';
+  minutesPerPatient: number;
+  nowServing: DeskEntry | null;
+  waitingCount: number;
+  onlineWaiting: number;
+  walkinWaiting: number;
+  entries: DeskEntry[];
+}
+
+export interface WalkInInput {
+  name: string;
+  phone: string;
+  age?: number;
+  symptoms?: string;
+  emergency?: boolean;
+}
+
 export interface FinanceSummary {
   day: string;
   patients: number;

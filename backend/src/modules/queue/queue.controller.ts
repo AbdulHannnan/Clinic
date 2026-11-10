@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { QueueService } from './queue.service';
 import { BookDto } from './dto/book.dto';
+import { WalkInDto } from './dto/walk-in.dto';
 import { CuidPipe } from '../../common/pipes/cuid.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -63,6 +64,34 @@ export class QueueController {
   @Get(':doctorId/doctor')
   staffView(@Param('doctorId', CuidPipe) doctorId: string) {
     return this.queue.staffView(doctorId);
+  }
+
+  // Staff-only: the management desk's full queue, with names, phones and money state.
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'DOCTOR', 'MANAGEMENT')
+  @Get(':doctorId/desk')
+  deskView(@Param('doctorId', CuidPipe) doctorId: string) {
+    return this.queue.deskView(doctorId);
+  }
+
+  // Reception registers a patient who is physically present (walk-in or emergency).
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'DOCTOR', 'MANAGEMENT')
+  @Post(':doctorId/walkin')
+  async walkIn(@Param('doctorId', CuidPipe) doctorId: string, @Body() dto: WalkInDto) {
+    const entry = await this.queue.registerWalkIn(doctorId, dto);
+    await this.broadcast(doctorId);
+    return entry;
+  }
+
+  // Reception marks a waiting patient as a no-show.
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'DOCTOR', 'MANAGEMENT')
+  @Post('entry/:entryId/no-show')
+  async noShow(@Param('entryId', CuidPipe) entryId: string) {
+    const doctorId = await this.queue.markNoShow(entryId);
+    await this.broadcast(doctorId);
+    return this.queue.track(entryId);
   }
 
   // Finish whoever is in the room and call the next waiting patient, then push both views live.

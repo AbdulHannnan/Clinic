@@ -33,6 +33,24 @@ export class PaymentsService {
     });
   }
 
+  /**
+   * Take the outstanding balance on a visit at the desk. Reads what's already paid, then records a
+   * single payment for exactly what's still owed — all in one transaction so a double-tap can't take
+   * the money twice. A visit with nothing (or a credit) owing is left untouched.
+   */
+  collect(queueEntryId: string, method: PaymentMethod, byStaffId?: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const entry = await tx.queueEntry.findUniqueOrThrow({ where: { id: queueEntryId }, include: { payments: true } });
+      const paid = entry.payments.filter((p) => p.kind === PaymentKind.PAYMENT).reduce((a, p) => a + p.amount, 0);
+      const refunded = entry.payments.filter((p) => p.kind === PaymentKind.REFUND).reduce((a, p) => a + p.amount, 0);
+      const owed = balance({ status: entry.status as QueueStatus, fee: entry.fee, discount: entry.discount, paid, refunded });
+      if (owed > 0) {
+        await tx.payment.create({ data: { queueEntryId, kind: PaymentKind.PAYMENT, method, amount: owed, byStaffId: byStaffId ?? null } });
+      }
+      return tx.queueEntry.findUniqueOrThrow({ where: { id: queueEntryId }, include: { payments: true } });
+    });
+  }
+
   async daySummary(doctorId: string, day = today()) {
     const entries = await this.prisma.queueEntry.findMany({ where: { doctorId, day }, include: { payments: true } });
     const byMethod: Record<PaymentMethod, number> = { CASH: 0, CARD: 0, ONLINE: 0 };
