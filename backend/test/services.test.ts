@@ -10,6 +10,8 @@ import { TreatmentPlansService } from '../src/modules/treatment-plans/treatment-
 
 // Hand-rolled Prisma doubles: each test passes only the methods the service under test calls.
 const fakePrisma = (overrides: Record<string, unknown>) => overrides as never;
+// QueueService also takes PatientsService (used only by booking); these tests never book.
+const stubPatients = {} as never;
 
 test('QueueService.publicView: in-room token serves, emergencies hidden, lastServed by finish time', async () => {
   const entries = [
@@ -23,6 +25,7 @@ test('QueueService.publicView: in-room token serves, emergencies hidden, lastSer
     fakePrisma({
       doctor: { findUnique: async () => ({ id: 'd', status: 'AVAILABLE', minutesPerPatient: 10, queueEntries: entries }) },
     }),
+    stubPatients,
   );
   const view = await svc.publicView('d');
   assert.equal(view.nowServing, '7');
@@ -46,6 +49,7 @@ test('QueueService.publicView: nobody in the room means nowServing is null', asy
         }),
       },
     }),
+    stubPatients,
   );
   const view = await svc.publicView('d');
   assert.equal(view.nowServing, null);
@@ -68,7 +72,7 @@ test('QueueService.callNext: finishes the in-room patient and calls the next, in
       },
     },
   };
-  const svc = new QueueService(fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) }));
+  const svc = new QueueService(fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) }), stubPatients);
   const res = await svc.callNext('d');
   assert.equal(seen.finished?.status, 'DONE');
   assert.equal(seen.called?.status, 'IN_ROOM');
@@ -85,7 +89,7 @@ test('QueueService.callNext: returns null (and calls nobody) when the queue is e
       },
     },
   };
-  const svc = new QueueService(fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) }));
+  const svc = new QueueService(fakePrisma({ $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) }), stubPatients);
   assert.equal(await svc.callNext('d'), null);
 });
 

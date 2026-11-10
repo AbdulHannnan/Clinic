@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { QueueStatus, QueueType, clinicDay, publicDoctorStatus, type DoctorStatus } from '@clinic/shared';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PatientsService } from '../patients/patients.service';
+import type { BookDto } from './dto/book.dto';
 
 // Resolve "today" in the clinic's time zone (CLINIC_TIME_ZONE env overrides the default), never the server's.
 export const today = () => clinicDay(new Date(), process.env.CLINIC_TIME_ZONE);
@@ -8,7 +10,94 @@ export const today = () => clinicDay(new Date(), process.env.CLINIC_TIME_ZONE);
 /** Today's queue for one doctor: the single list that online bookings, walk-ins and emergencies share. */
 @Injectable()
 export class QueueService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly patients: PatientsService,
+  ) {}
+
+  /**
+   * A patient booking themselves onto today's queue (an ONLINE entry). The patient is matched or created
+   * by phone. Token and sort order are read and the row written in one transaction so two bookings landing
+   * together can't take the same token; the DB's unique (doctor, day, token) is the final guard.
+   */
+  async book(doctorId: string, dto: BookDto) {
+    const doctor = await this.prisma.doctor.findUnique({ where: { id: doctorId } });
+    if (!doctor) throw new NotFoundException('Doctor not found');
+
+    const patient = await this.patients.findOrCreate(dto.phone, dto.name);
+    if (dto.age != null) {
+      await this.prisma.patient.update({ where: { id: patient.id }, data: { birthYear: new Date().getFullYear() - dto.age } });
+    }
+
+    const day = today();
+    const entry = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.queueEntry.findMany({ where: { doctorId, day }, select: { token: true, sortOrder: true } });
+      // Numeric tokens only (emergencies are "E1" etc.); the next patient takes the highest + 1.
+      const maxToken = existing.map((e) => parseInt(e.token, 10)).filter((n) => !Number.isNaN(n)).reduce((a, b) => Math.max(a, b), 0);
+      const maxSort = existing.reduce((a, e) => Math.max(a, e.sortOrder), 0);
+      return tx.queueEntry.create({
+        data: {
+          doctorId,
+          patientId: patient.id,
+          day,
+          token: String(maxToken + 1),
+          sortOrder: maxSort + 1,
+          type: QueueType.ONLINE,
+          fee: doctor.fee,
+          symptoms: dto.symptoms ?? null,
+        },
+      });
+    });
+    return { id: entry.id, doctorId, token: entry.token, fee: entry.fee, payAtClinic: dto.payAtClinic ?? false };
+  }
+
+  /** One patient's own view of where they stand: their status, how many are ahead, who is in now. */
+  async track(entryId: string) {
+    const entry = await this.prisma.queueEntry.findUnique({
+      where: { id: entryId },
+      include: { doctor: { select: { minutesPerPatient: true, status: true } } },
+    });
+    if (!entry) throw new NotFoundException('Booking not found');
+    const aheadCount = await this.prisma.queueEntry.count({
+      where: { doctorId: entry.doctorId, day: entry.day, status: QueueStatus.WAITING, sortOrder: { lt: entry.sortOrder } },
+    });
+    const inRoom = await this.prisma.queueEntry.findFirst({
+      where: { doctorId: entry.doctorId, day: entry.day, status: QueueStatus.IN_ROOM },
+      select: { token: true },
+    });
+    return {
+      id: entry.id,
+      doctorId: entry.doctorId,
+      token: entry.token,
+      status: entry.status as QueueStatus,
+      arrived: entry.arrived,
+      type: entry.type as QueueType,
+      aheadCount,
+      nowServing: inRoom?.token ?? null,
+      minutesPerPatient: entry.doctor.minutesPerPatient,
+      doctorStatus: entry.doctor.status as DoctorStatus,
+    };
+  }
+
+  /** Patient marks themselves present at the clinic. Returns the owning doctor so callers can push updates. */
+  async markArrived(entryId: string) {
+    const entry = await this.prisma.queueEntry.findUnique({ where: { id: entryId }, select: { id: true, doctorId: true, status: true } });
+    if (!entry) throw new NotFoundException('Booking not found');
+    if (entry.status === QueueStatus.WAITING) {
+      await this.prisma.queueEntry.update({ where: { id: entryId }, data: { arrived: true } });
+    }
+    return entry.doctorId;
+  }
+
+  /** Patient cancels their own booking while still waiting. No-op once they've been called in. */
+  async cancel(entryId: string) {
+    const entry = await this.prisma.queueEntry.findUnique({ where: { id: entryId }, select: { id: true, doctorId: true, status: true } });
+    if (!entry) throw new NotFoundException('Booking not found');
+    if (entry.status === QueueStatus.WAITING) {
+      await this.prisma.queueEntry.update({ where: { id: entryId }, data: { status: QueueStatus.CANCELLED } });
+    }
+    return entry.doctorId;
+  }
 
   entriesToday(doctorId: string) {
     return this.prisma.queueEntry.findMany({ where: { doctorId, day: today() }, orderBy: { sortOrder: 'asc' } });

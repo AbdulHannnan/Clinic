@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { QueueController } from './queue.controller';
 import { QueueService } from './queue.service';
+import { PatientsModule } from '../patients/patients.module';
 
-@Module({ controllers: [QueueController], providers: [QueueService], exports: [QueueService] })
+@Module({ imports: [PatientsModule], controllers: [QueueController], providers: [QueueService], exports: [QueueService] })
 export class QueueModule {}

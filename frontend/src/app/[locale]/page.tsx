@@ -2,9 +2,10 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Card } from '@/components/ui/Card';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { LiveQueue } from '@/features/queue/components/LiveQueue';
+import { BookingPanel } from '@/features/booking/components/BookingPanel';
 import { api, type ClinicProfile, type PublicQueue } from '@/lib/api';
 
-/** Patient home: the doctor's own branded page with the live queue. */
+/** Patient home: the doctor's own branded page with the live queue and booking. */
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -52,14 +53,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             </p>
           </div>
           {queues[d.id] && <LiveQueue initial={queues[d.id]} />}
-          <div className="flex items-center justify-between">
-            <span className="font-mono font-semibold" dir="ltr">
-              {t('fee')}: Rs {d.fee.toLocaleString('en-US')}
-            </span>
-            <button className="rounded-lg bg-accent px-4 py-2 font-semibold text-white" disabled>
-              {t('book')}
-            </button>
-          </div>
+          <BookingPanel doctorId={d.id} fee={d.fee} status={d.status as 'AVAILABLE' | 'BREAK' | 'CLOSED'} />
         </Card>
       ))}
     </main>

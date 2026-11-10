@@ -45,7 +45,8 @@ test('QueueService.publicView reflects real rows and hides emergencies', { skip:
     await prisma.queueEntry.create({ data: { doctorId: doctor.id, patientId: patient.id, day, fee: 1500, ...r } });
   }
 
-  const view = await new QueueService(prisma as never).publicView(doctor.id);
+  // publicView doesn't touch PatientsService, so a stub stands in for the booking dependency.
+  const view = await new QueueService(prisma as never, {} as never).publicView(doctor.id);
   assert.equal(view.nowServing, '6');
   assert.equal(view.lastServed, '5');
   assert.deepEqual(

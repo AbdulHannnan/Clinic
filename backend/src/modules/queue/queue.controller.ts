@@ -1,5 +1,7 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { QueueService } from './queue.service';
+import { BookDto } from './dto/book.dto';
 import { CuidPipe } from '../../common/pipes/cuid.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -13,9 +15,46 @@ export class QueueController {
     private readonly realtime: RealtimeGateway,
   ) {}
 
+  // Push the fresh public + staff views to everyone watching this doctor after any queue change.
+  private async broadcast(doctorId: string) {
+    const [publicView, staffView] = await Promise.all([this.queue.publicView(doctorId), this.queue.staffView(doctorId)]);
+    this.realtime.queueChanged(doctorId, publicView, staffView);
+  }
+
   @Get(':doctorId/public')
   publicView(@Param('doctorId', CuidPipe) doctorId: string) {
     return this.queue.publicView(doctorId);
+  }
+
+  // Patient self-booking. Public, but rate-limited so the queue can't be flooded.
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  @Post(':doctorId/book')
+  async book(@Param('doctorId', CuidPipe) doctorId: string, @Body() dto: BookDto) {
+    const booking = await this.queue.book(doctorId, dto);
+    await this.broadcast(doctorId);
+    return booking;
+  }
+
+  // Patient tracks their own booking by its (unguessable) id.
+  @Get('entry/:entryId')
+  track(@Param('entryId', CuidPipe) entryId: string) {
+    return this.queue.track(entryId);
+  }
+
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
+  @Post('entry/:entryId/arrived')
+  async arrived(@Param('entryId', CuidPipe) entryId: string) {
+    const doctorId = await this.queue.markArrived(entryId);
+    await this.broadcast(doctorId);
+    return this.queue.track(entryId);
+  }
+
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
+  @Post('entry/:entryId/cancel')
+  async cancel(@Param('entryId', CuidPipe) entryId: string) {
+    const doctorId = await this.queue.cancel(entryId);
+    await this.broadcast(doctorId);
+    return this.queue.track(entryId);
   }
 
   // Staff-only: the doctor's room sees full names and every queue type.
@@ -32,8 +71,8 @@ export class QueueController {
   @Post(':doctorId/call-next')
   async callNext(@Param('doctorId', CuidPipe) doctorId: string) {
     await this.queue.callNext(doctorId);
-    const [publicView, staffView] = await Promise.all([this.queue.publicView(doctorId), this.queue.staffView(doctorId)]);
-    this.realtime.queueChanged(doctorId, publicView, staffView);
+    const staffView = await this.queue.staffView(doctorId);
+    this.realtime.queueChanged(doctorId, await this.queue.publicView(doctorId), staffView);
     return staffView;
   }
 }

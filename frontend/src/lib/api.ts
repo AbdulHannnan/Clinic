@@ -83,6 +83,35 @@ export interface FinanceSummary {
   byMethod: { CASH: number; CARD: number; ONLINE: number };
 }
 
+export interface BookInput {
+  name: string;
+  phone: string;
+  symptoms?: string;
+  age?: number;
+  payAtClinic?: boolean;
+}
+
+export interface BookResult {
+  id: string;
+  doctorId: string;
+  token: string;
+  fee: number;
+  payAtClinic: boolean;
+}
+
+export interface BookingTrack {
+  id: string;
+  doctorId: string;
+  token: string;
+  status: QueueEntryStatus;
+  arrived: boolean;
+  type: QueueEntryType;
+  aheadCount: number;
+  nowServing: string | null;
+  minutesPerPatient: number;
+  doctorStatus: 'AVAILABLE' | 'BREAK' | 'CLOSED';
+}
+
 export interface PublicQueue {
   doctorId: string;
   status: 'AVAILABLE' | 'BREAK' | 'CLOSED';
