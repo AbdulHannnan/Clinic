@@ -2,10 +2,10 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
-import { login } from '@/lib/auth';
+import { login, staffHome } from '@/lib/auth';
 
 /** Staff login: phone + password in exchange for the token the doctor's room and desk carry. */
-export function LoginForm({ next = '/doctor' }: { next?: string }) {
+export function LoginForm({ next }: { next?: string }) {
   const t = useTranslations('Auth');
   const router = useRouter();
   const [phone, setPhone] = useState('');
@@ -18,8 +18,9 @@ export function LoginForm({ next = '/doctor' }: { next?: string }) {
     setBusy(true);
     setError(null);
     try {
-      await login(phone.trim(), password);
-      router.push(next);
+      const session = await login(phone.trim(), password);
+      // No explicit target given: send each role to the screen it works from.
+      router.push(next ?? staffHome(session.staff.role));
     } catch (err) {
       setError((err as Error).message === 'INVALID' ? t('invalid') : t('failed'));
       setBusy(false);

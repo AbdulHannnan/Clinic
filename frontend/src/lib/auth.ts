@@ -1,4 +1,9 @@
-import { API_URL, type LoginResponse, type StaffPrincipal } from './api';
+import { API_URL, type LoginResponse, type StaffPrincipal, type StaffRole } from './api';
+
+/** Where a staff member lands after signing in: a doctor opens the room, everyone else the desk. */
+export function staffHome(role: StaffRole): '/doctor' | '/reception' {
+  return role === 'DOCTOR' ? '/doctor' : '/reception';
+}
 
 // Staff session lives in localStorage: a browser-only store, so every access is guarded for SSR.
 const KEY = 'clinic_staff_session';
