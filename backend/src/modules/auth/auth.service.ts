@@ -35,4 +35,23 @@ export class AuthService {
   verifyToken(token: string): Promise<JwtPayload> {
     return this.jwt.verifyAsync<JwtPayload>(token);
   }
+
+  /**
+   * Verify a token and confirm the staff member is still active, for the realtime gateway's staff
+   * rooms. Mirrors the HTTP JwtStrategy: a valid signature isn't enough, since a deactivated account's
+   * token stays valid for hours. Returns the current principal, or null to refuse the room.
+   */
+  async authenticateStaffToken(token: string): Promise<StaffPrincipal | null> {
+    try {
+      const payload = await this.jwt.verifyAsync<JwtPayload>(token);
+      const staff = await this.prisma.staffUser.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, role: true, name: true, doctorId: true, active: true },
+      });
+      if (!staff || !staff.active) return null;
+      return { id: staff.id, role: staff.role, name: staff.name, doctorId: staff.doctorId };
+    } catch {
+      return null;
+    }
+  }
 }

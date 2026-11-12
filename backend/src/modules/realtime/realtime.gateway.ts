@@ -30,12 +30,10 @@ export class RealtimeGateway {
     if (!/^staff:[\w-]+$/.test(room)) return;
     const token = socket.handshake.auth?.token ?? (socket.handshake.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
     if (!token) return;
-    try {
-      await this.auth.verifyToken(token);
-      socket.join(room);
-    } catch {
-      // Invalid or expired token: silently refuse the staff room.
-    }
+    // A valid signature isn't enough: confirm the account is still active (deactivated staff are refused).
+    const staff = await this.auth.authenticateStaffToken(token);
+    if (staff) socket.join(room);
+    // Invalid, expired, or deactivated: silently refuse the staff room.
   }
 
   queueChanged(doctorId: string, publicView: unknown, staffView?: unknown) {
