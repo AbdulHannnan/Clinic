@@ -7,12 +7,13 @@ import { patientLogin } from '@/lib/patientAuth';
 
 // The three sign-in boxes. This is only a visual picker: the real role comes from the account,
 // so the choice here just tailors the heading — it is never sent to the API.
-type RoleKey = 'patient' | 'reception' | 'doctor';
+// Two sign-in boxes. Staff (doctor and reception) share the Doctor box — they can already see each
+// other's screens — so the only real split here is staff vs. patient.
+type RoleKey = 'patient' | 'doctor';
 
 const ROLES: { key: RoleKey; icon: string }[] = [
-  { key: 'patient', icon: '👤' },
-  { key: 'reception', icon: '🗂️' },
   { key: 'doctor', icon: '🩺' },
+  { key: 'patient', icon: '👤' },
 ];
 
 /** Staff login: pick who is signing in, then phone + password in exchange for the staff token. */
@@ -123,10 +124,10 @@ export function LoginForm({ next }: { next?: string }) {
   );
 }
 
-function roleLabel(key: RoleKey): 'rolePatient' | 'roleReception' | 'roleDoctor' {
-  return key === 'patient' ? 'rolePatient' : key === 'reception' ? 'roleReception' : 'roleDoctor';
+function roleLabel(key: RoleKey): 'rolePatient' | 'roleDoctor' {
+  return key === 'patient' ? 'rolePatient' : 'roleDoctor';
 }
 
-function roleHint(key: RoleKey): 'rolePatientHint' | 'roleReceptionHint' | 'roleDoctorHint' {
-  return key === 'patient' ? 'rolePatientHint' : key === 'reception' ? 'roleReceptionHint' : 'roleDoctorHint';
+function roleHint(key: RoleKey): 'rolePatientHint' | 'roleDoctorHint' {
+  return key === 'patient' ? 'rolePatientHint' : 'roleDoctorHint';
 }

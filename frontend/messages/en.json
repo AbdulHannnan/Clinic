@@ -124,10 +124,8 @@
     "failed": "Couldn’t sign in. Please try again.",
     "devHint": "Development login: 03000000000 / admin123",
     "chooseRole": "Who is signing in?",
-    "roleReception": "Receptionist",
-    "roleReceptionHint": "Front desk & queue",
     "roleDoctor": "Doctor",
-    "roleDoctorHint": "Consultation room",
+    "roleDoctorHint": "Doctor & front desk",
     "back": "Back",
     "rolePatient": "Patient",
     "rolePatientHint": "Join queue or book"
