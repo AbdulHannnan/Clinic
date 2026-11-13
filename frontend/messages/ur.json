@@ -1,5 +1,9 @@
 {
-  "Common": { "switchLanguage": "English", "poweredBy": "Powered by ClinicQ", "live": "لائیو" },
+  "Common": {
+    "switchLanguage": "English",
+    "poweredBy": "Powered by ClinicQ",
+    "live": "لائیو"
+  },
   "Home": {
     "book": "اپوائنٹمنٹ بک کریں",
     "fee": "فیس",
@@ -10,7 +14,11 @@
     "waiting": "انتظار میں",
     "lastServed": "آخری نمبر #{token}",
     "noneYet": "ابھی کوئی اندر نہیں",
-    "status": { "AVAILABLE": "دستیاب", "BREAK": "وقفے پر", "CLOSED": "بند" }
+    "status": {
+      "AVAILABLE": "دستیاب",
+      "BREAK": "وقفے پر",
+      "CLOSED": "بند"
+    }
   },
   "Staff": {
     "reception": "انتظامیہ",
@@ -40,8 +48,18 @@
     "addEmergency": "ایمرجنسی",
     "walkInNeeds": "نام اور فون ضروری ہیں۔",
     "walkInFailed": "مریض شامل نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
-    "type": { "ONLINE": "آن لائن", "WALKIN": "واک اِن", "EMERGENCY": "ایمرجنسی" },
-    "status": { "WAITING": "انتظار میں", "IN_ROOM": "کمرے میں", "DONE": "دیکھ لیا", "NO_SHOW": "غیر حاضر", "CANCELLED": "منسوخ" },
+    "type": {
+      "ONLINE": "آن لائن",
+      "WALKIN": "واک اِن",
+      "EMERGENCY": "ایمرجنسی"
+    },
+    "status": {
+      "WAITING": "انتظار میں",
+      "IN_ROOM": "کمرے میں",
+      "DONE": "دیکھ لیا",
+      "NO_SHOW": "غیر حاضر",
+      "CANCELLED": "منسوخ"
+    },
     "inRoom": "کمرے میں",
     "arrived": "آ گئے",
     "notArrived": "نہیں آئے",
@@ -56,7 +74,11 @@
     "patients": "مریض",
     "pending": "باقی",
     "discounts": "رعایتیں",
-    "method": { "CASH": "نقد", "CARD": "کارڈ", "ONLINE": "آن لائن" },
+    "method": {
+      "CASH": "نقد",
+      "CARD": "کارڈ",
+      "ONLINE": "آن لائن"
+    },
     "payLog": "ادائیگی کا ریکارڈ",
     "fee": "فیس",
     "paidCol": "ادا شدہ",
@@ -100,7 +122,15 @@
     "signingIn": "سائن اِن ہو رہا ہے…",
     "invalid": "فون یا پاس ورڈ غلط ہے۔",
     "failed": "سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
-    "devHint": "ڈیولپمنٹ لاگ اِن: 03000000000 / admin123"
+    "devHint": "ڈیولپمنٹ لاگ اِن: 03000000000 / admin123",
+    "chooseRole": "کون سائن اِن کر رہا ہے؟",
+    "roleUser": "صارف",
+    "roleUserHint": "مالک و ایڈمن",
+    "roleReception": "استقبالیہ",
+    "roleReceptionHint": "فرنٹ ڈیسک و قطار",
+    "roleDoctor": "ڈاکٹر",
+    "roleDoctorHint": "مشاورتی کمرہ",
+    "back": "واپس"
   },
   "Doctor": {
     "live": "لائیو",
@@ -114,8 +144,16 @@
     "waiting": "انتظار میں",
     "earnedToday": "آج کی آمدن",
     "minsPerPatient": "فی مریض {mins} منٹ",
-    "status": { "AVAILABLE": "دستیاب", "BREAK": "وقفے پر", "CLOSED": "بند" },
-    "type": { "ONLINE": "آن لائن", "WALKIN": "واک اِن", "EMERGENCY": "ایمرجنسی" },
+    "status": {
+      "AVAILABLE": "دستیاب",
+      "BREAK": "وقفے پر",
+      "CLOSED": "بند"
+    },
+    "type": {
+      "ONLINE": "آن لائن",
+      "WALKIN": "واک اِن",
+      "EMERGENCY": "ایمرجنسی"
+    },
     "inRoom": "کمرے میں",
     "doneNext": "مکمل · اگلا بلائیں",
     "startClinic": "کلینک شروع کریں",

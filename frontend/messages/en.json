@@ -1,5 +1,9 @@
 {
-  "Common": { "switchLanguage": "اردو", "poweredBy": "Powered by ClinicQ", "live": "Live" },
+  "Common": {
+    "switchLanguage": "اردو",
+    "poweredBy": "Powered by ClinicQ",
+    "live": "Live"
+  },
   "Home": {
     "book": "Book an appointment",
     "fee": "Fee",
@@ -10,7 +14,11 @@
     "waiting": "Waiting",
     "lastServed": "Last seen #{token}",
     "noneYet": "No one in yet",
-    "status": { "AVAILABLE": "Available", "BREAK": "On break", "CLOSED": "Closed" }
+    "status": {
+      "AVAILABLE": "Available",
+      "BREAK": "On break",
+      "CLOSED": "Closed"
+    }
   },
   "Staff": {
     "reception": "Management",
@@ -40,8 +48,18 @@
     "addEmergency": "Emergency",
     "walkInNeeds": "Name and phone are required.",
     "walkInFailed": "Couldn’t add the patient. Please try again.",
-    "type": { "ONLINE": "Online", "WALKIN": "Walk-in", "EMERGENCY": "Emergency" },
-    "status": { "WAITING": "Waiting", "IN_ROOM": "In room", "DONE": "Seen", "NO_SHOW": "No-show", "CANCELLED": "Cancelled" },
+    "type": {
+      "ONLINE": "Online",
+      "WALKIN": "Walk-in",
+      "EMERGENCY": "Emergency"
+    },
+    "status": {
+      "WAITING": "Waiting",
+      "IN_ROOM": "In room",
+      "DONE": "Seen",
+      "NO_SHOW": "No-show",
+      "CANCELLED": "Cancelled"
+    },
     "inRoom": "In room",
     "arrived": "Arrived",
     "notArrived": "Not arrived",
@@ -56,7 +74,11 @@
     "patients": "Patients",
     "pending": "Pending",
     "discounts": "Discounts",
-    "method": { "CASH": "Cash", "CARD": "Card", "ONLINE": "Online" },
+    "method": {
+      "CASH": "Cash",
+      "CARD": "Card",
+      "ONLINE": "Online"
+    },
     "payLog": "Payment log",
     "fee": "Fee",
     "paidCol": "Paid",
@@ -100,7 +122,15 @@
     "signingIn": "Signing in…",
     "invalid": "Wrong phone or password.",
     "failed": "Couldn’t sign in. Please try again.",
-    "devHint": "Development login: 03000000000 / admin123"
+    "devHint": "Development login: 03000000000 / admin123",
+    "chooseRole": "Who is signing in?",
+    "roleUser": "User",
+    "roleUserHint": "Owner & admin",
+    "roleReception": "Receptionist",
+    "roleReceptionHint": "Front desk & queue",
+    "roleDoctor": "Doctor",
+    "roleDoctorHint": "Consultation room",
+    "back": "Back"
   },
   "Doctor": {
     "live": "Live",
@@ -114,8 +144,16 @@
     "waiting": "Waiting",
     "earnedToday": "Earned today",
     "minsPerPatient": "{mins} min per patient",
-    "status": { "AVAILABLE": "Available", "BREAK": "On break", "CLOSED": "Closed" },
-    "type": { "ONLINE": "Online", "WALKIN": "Walk-in", "EMERGENCY": "Emergency" },
+    "status": {
+      "AVAILABLE": "Available",
+      "BREAK": "On break",
+      "CLOSED": "Closed"
+    },
+    "type": {
+      "ONLINE": "Online",
+      "WALKIN": "Walk-in",
+      "EMERGENCY": "Emergency"
+    },
     "inRoom": "In the room",
     "doneNext": "Done · call next",
     "startClinic": "Start clinic",
