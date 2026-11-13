@@ -124,13 +124,13 @@
     "failed": "سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
     "devHint": "ڈیولپمنٹ لاگ اِن: 03000000000 / admin123",
     "chooseRole": "کون سائن اِن کر رہا ہے؟",
-    "roleUser": "صارف",
-    "roleUserHint": "مالک و ایڈمن",
     "roleReception": "استقبالیہ",
     "roleReceptionHint": "فرنٹ ڈیسک و قطار",
     "roleDoctor": "ڈاکٹر",
     "roleDoctorHint": "مشاورتی کمرہ",
-    "back": "واپس"
+    "back": "واپس",
+    "rolePatient": "مریض",
+    "rolePatientHint": "قطار یا بکنگ"
   },
   "Doctor": {
     "live": "لائیو",

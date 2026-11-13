@@ -124,13 +124,13 @@
     "failed": "Couldn’t sign in. Please try again.",
     "devHint": "Development login: 03000000000 / admin123",
     "chooseRole": "Who is signing in?",
-    "roleUser": "User",
-    "roleUserHint": "Owner & admin",
     "roleReception": "Receptionist",
     "roleReceptionHint": "Front desk & queue",
     "roleDoctor": "Doctor",
     "roleDoctorHint": "Consultation room",
-    "back": "Back"
+    "back": "Back",
+    "rolePatient": "Patient",
+    "rolePatientHint": "Join queue or book"
   },
   "Doctor": {
     "live": "Live",
