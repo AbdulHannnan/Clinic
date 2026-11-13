@@ -7,6 +7,8 @@ import { CuidPipe } from '../../common/pipes/cuid.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { PatientAuthGuard, type PatientPrincipal } from '../auth/guards/patient-auth.guard';
+import { CurrentPatient } from '../auth/decorators/current-patient.decorator';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 @Controller('queue')
@@ -25,6 +27,13 @@ export class QueueController {
   @Get(':doctorId/public')
   publicView(@Param('doctorId', CuidPipe) doctorId: string) {
     return this.queue.publicView(doctorId);
+  }
+
+  // Patient portal: the signed-in patient's own queue status for today.
+  @UseGuards(PatientAuthGuard)
+  @Get('me')
+  myStatus(@CurrentPatient() patient: PatientPrincipal) {
+    return this.queue.myStatus(patient.id);
   }
 
   // Patient self-booking. Public, but rate-limited so the queue can't be flooded.

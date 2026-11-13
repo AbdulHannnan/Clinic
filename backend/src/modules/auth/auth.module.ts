@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { PatientAuthGuard } from './guards/patient-auth.guard';
 
 type ExpiresIn = NonNullable<NonNullable<JwtModuleOptions['signOptions']>['expiresIn']>;
 
@@ -24,7 +25,7 @@ type ExpiresIn = NonNullable<NonNullable<JwtModuleOptions['signOptions']>['expir
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
-  exports: [AuthService, JwtAuthGuard, RolesGuard, JwtModule],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, PatientAuthGuard],
+  exports: [AuthService, JwtAuthGuard, RolesGuard, PatientAuthGuard, JwtModule],
 })
 export class AuthModule {}

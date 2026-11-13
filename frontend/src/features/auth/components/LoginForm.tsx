@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { login, staffHome } from '@/lib/auth';
+import { patientLogin } from '@/lib/patientAuth';
 
 // The three sign-in boxes. This is only a visual picker: the real role comes from the account,
 // so the choice here just tailors the heading — it is never sent to the API.
@@ -29,6 +30,12 @@ export function LoginForm({ next }: { next?: string }) {
     setBusy(true);
     setError(null);
     try {
+      if (role === 'patient') {
+        // Patients sign in to their own portal, not the staff screens.
+        await patientLogin(phone.trim(), password);
+        router.push('/patient');
+        return;
+      }
       const session = await login(phone.trim(), password);
       // No explicit target given: send each role to the screen it works from.
       router.push(next ?? staffHome(session.staff.role));

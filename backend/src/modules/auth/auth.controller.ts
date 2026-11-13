@@ -13,4 +13,11 @@ export class AuthController {
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto.phone, dto.password);
   }
+
+  // Patient portal login. Same tight rate limit as staff login to slow password guessing.
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Post('patient/login')
+  patientLogin(@Body() dto: LoginDto) {
+    return this.auth.patientLogin(dto.phone, dto.password);
+  }
 }

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { JwtPayload, StaffPrincipal } from './jwt.strategy';
+import type { PatientJwtPayload, PatientPrincipal } from './guards/patient-auth.guard';
 
 const SALT_ROUNDS = 10;
 
@@ -29,6 +30,17 @@ export class AuthService {
       token: await this.jwt.signAsync(payload),
       staff: { id: staff.id, role: staff.role, name: staff.name, doctorId: staff.doctorId },
     };
+  }
+
+  /** Patient portal login with phone + password. Only patients who set a password can sign in. */
+  async patientLogin(phone: string, password: string): Promise<{ token: string; patient: PatientPrincipal }> {
+    const patient = await this.prisma.patient.findUnique({ where: { phone } });
+    // Same error whether the phone is unknown, has no password, or the password is wrong.
+    if (!patient || !patient.passwordHash || !(await bcrypt.compare(password, patient.passwordHash))) {
+      throw new UnauthorizedException('Invalid phone or password');
+    }
+    const payload: PatientJwtPayload = { sub: patient.id, kind: 'patient', name: patient.name };
+    return { token: await this.jwt.signAsync(payload), patient: { id: patient.id, name: patient.name } };
   }
 
   /** Verify a raw token (used by the realtime gateway to guard staff rooms). */

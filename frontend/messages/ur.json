@@ -163,5 +163,28 @@
     "upNext": "اگلے مریض",
     "arrived": "آ گئے",
     "notArrived": "نہیں آئے"
+  },
+  "Patient": {
+    "title": "مریض پورٹل",
+    "greeting": "خوش آمدید، {name}",
+    "signOut": "سائن آؤٹ",
+    "refresh": "ریفریش",
+    "refreshing": "ریفریش ہو رہا ہے…",
+    "loadError": "آپ کی صورتحال لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+    "signInPrompt": "اپنی ملاقات دیکھنے کے لیے سائن اِن کریں۔",
+    "signInCta": "سائن اِن پر جائیں",
+    "noBooking": "آج آپ کی کوئی بکنگ نہیں ہے۔",
+    "yourToken": "آپ کا ٹوکن",
+    "nowServing": "اب باری",
+    "none": "—",
+    "ahead": "{count, plural, =0 {آپ کی باری ہے} other {آپ سے پہلے # مریض}}",
+    "estimate": "تقریباً {minutes} منٹ انتظار",
+    "statusWaiting": "انتظار میں",
+    "statusInRoom": "آپ کی باری ہے — براہِ کرم اندر تشریف لے جائیں",
+    "statusDone": "مکمل",
+    "statusNoShow": "غیر حاضر",
+    "statusCancelled": "منسوخ",
+    "doctorBreak": "ڈاکٹر مختصر وقفے پر ہیں۔",
+    "doctorClosed": "اس وقت کلینک بند ہے۔"
   }
 }

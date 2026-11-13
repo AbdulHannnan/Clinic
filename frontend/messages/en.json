@@ -163,5 +163,28 @@
     "upNext": "Up next",
     "arrived": "Arrived",
     "notArrived": "Not arrived"
+  },
+  "Patient": {
+    "title": "Patient portal",
+    "greeting": "Hello, {name}",
+    "signOut": "Sign out",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "loadError": "Couldn’t load your status. Please try again.",
+    "signInPrompt": "Please sign in to see your visit.",
+    "signInCta": "Go to sign in",
+    "noBooking": "You have no booking today.",
+    "yourToken": "Your token",
+    "nowServing": "Now serving",
+    "none": "—",
+    "ahead": "{count, plural, =0 {You’re next} one {# patient ahead of you} other {# patients ahead of you}}",
+    "estimate": "About {minutes} min wait",
+    "statusWaiting": "Waiting",
+    "statusInRoom": "It’s your turn — please go in",
+    "statusDone": "Completed",
+    "statusNoShow": "Missed",
+    "statusCancelled": "Cancelled",
+    "doctorBreak": "The doctor is on a short break.",
+    "doctorClosed": "The clinic is closed right now."
   }
 }

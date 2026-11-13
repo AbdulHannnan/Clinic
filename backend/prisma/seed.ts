@@ -28,11 +28,27 @@ async function main() {
       },
     }));
 
-  // Development login: phone 03000000000 / password admin123. Change before any real use.
-  await prisma.staffUser.upsert({
-    where: { phone: '03000000000' },
-    update: {},
-    create: { name: 'Clinic Admin', phone: '03000000000', role: 'ADMIN', passwordHash: await bcrypt.hash('admin123', 10), doctorId: doctor.id },
+  // Development logins only — fictional accounts, change before any real use.
+  // Each box on the sign-in screen has a matching account below.
+  const devStaff: { name: string; phone: string; role: 'ADMIN' | 'DOCTOR' | 'MANAGEMENT'; password: string }[] = [
+    { name: 'Clinic Admin', phone: '03000000000', role: 'ADMIN', password: 'admin123' },
+    { name: 'Front Desk', phone: '03000000001', role: 'MANAGEMENT', password: 'reception123' }, // Receptionist box
+    { name: 'Dr. Ayesha Siddiqui', phone: '03000000002', role: 'DOCTOR', password: 'doctor123' }, // Doctor box
+  ];
+  for (const s of devStaff) {
+    await prisma.staffUser.upsert({
+      where: { phone: s.phone },
+      update: {},
+      create: { name: s.name, phone: s.phone, role: s.role, passwordHash: await bcrypt.hash(s.password, 10), doctorId: doctor.id },
+    });
+  }
+
+  // Patient box: a demo patient portal account. Phone 03000000003 / password patient123.
+  const patientHash = await bcrypt.hash('patient123', 10);
+  await prisma.patient.upsert({
+    where: { phone: '03000000003' },
+    update: { passwordHash: patientHash },
+    create: { name: 'Demo Patient', phone: '03000000003', passwordHash: patientHash },
   });
 
   if ((await prisma.preset.count()) === 0) {
@@ -75,7 +91,11 @@ async function main() {
     }
   }
   console.log(`Seeded clinic with doctor ${doctor.id}`);
-  console.log('Dev staff login: phone 03000000000 / password admin123');
+  console.log('Dev logins (phone / password):');
+  console.log('  Admin        03000000000 / admin123');
+  console.log('  Receptionist 03000000001 / reception123');
+  console.log('  Doctor       03000000002 / doctor123');
+  console.log('  Patient      03000000003 / patient123');
 }
 
 main().finally(() => prisma.$disconnect());

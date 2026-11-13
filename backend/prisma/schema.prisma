@@ -64,6 +64,9 @@ model Patient {
   id           String   @id @default(cuid())
   name         String
   phone        String   @unique
+  // Optional: only patients who set one can sign in to the patient portal. Staff-created
+  // records (walk-ins, bookings) have no password and simply can't log in.
+  passwordHash String?
   birthYear    Int?
   gender       Gender?
   historyEnc   Bytes? // patient-written medical history, encrypted

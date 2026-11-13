@@ -40,6 +40,21 @@ export interface LoginResponse {
   staff: StaffPrincipal;
 }
 
+export interface PatientPrincipal {
+  id: string;
+  name: string;
+}
+
+export interface PatientLoginResponse {
+  token: string;
+  patient: PatientPrincipal;
+}
+
+/** A signed-in patient's own queue status for today (`GET /queue/me`). */
+export interface PatientStatus {
+  booking: BookingTrack | null;
+}
+
 export type QueueEntryType = 'ONLINE' | 'WALKIN' | 'EMERGENCY';
 export type QueueEntryStatus = 'WAITING' | 'IN_ROOM' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
 

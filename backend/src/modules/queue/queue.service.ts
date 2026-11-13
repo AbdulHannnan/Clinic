@@ -81,6 +81,23 @@ export class QueueService {
   }
 
   /** Patient marks themselves present at the clinic. Returns the owning doctor so callers can push updates. */
+  /** A signed-in patient's own status today: their active booking (or most recent), or null. */
+  async myStatus(patientId: string) {
+    const active = await this.prisma.queueEntry.findFirst({
+      where: { patientId, day: today(), status: { in: [QueueStatus.WAITING, QueueStatus.IN_ROOM] } },
+      orderBy: { sortOrder: 'asc' },
+      select: { id: true },
+    });
+    const entry =
+      active ??
+      (await this.prisma.queueEntry.findFirst({
+        where: { patientId, day: today() },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      }));
+    return { booking: entry ? await this.track(entry.id) : null };
+  }
+
   async markArrived(entryId: string) {
     const entry = await this.prisma.queueEntry.findUnique({ where: { id: entryId }, select: { id: true, doctorId: true, status: true } });
     if (!entry) throw new NotFoundException('Booking not found');
