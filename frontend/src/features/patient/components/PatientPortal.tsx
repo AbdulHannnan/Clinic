@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Card } from '@/components/ui/Card';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { LiveQueue } from '@/features/queue/components/LiveQueue';
 import { Link, useRouter } from '@/i18n/navigation';
 import { authedApi } from '@/lib/auth';
@@ -116,7 +117,10 @@ export function PatientPortal() {
       <main className="mx-auto flex max-w-md flex-col gap-4 px-4 py-10">
         <header className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-extrabold tracking-tight">{t('title')}</h1>
-          <LanguageSwitch />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <LanguageSwitch />
+          </div>
         </header>
         <Card className="flex flex-col gap-3">
           <p className="text-sm text-muted">{t('signInPrompt')}</p>
@@ -137,7 +141,10 @@ export function PatientPortal() {
           <h1 className="text-2xl font-extrabold tracking-tight">{t('title')}</h1>
           <p className="text-sm text-muted">{t('greeting', { name })}</p>
         </div>
-        <LanguageSwitch />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <LanguageSwitch />
+        </div>
       </header>
 
       {error && <p className="text-sm font-semibold text-emergency">{error}</p>}

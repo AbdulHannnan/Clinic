@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Card } from '@/components/ui/Card';
 import { LanguageSwitch } from '@/components/LanguageSwitch';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { LiveQueue } from '@/features/queue/components/LiveQueue';
 import { BookingPanel } from '@/features/booking/components/BookingPanel';
 import { api, type ClinicProfile, type PublicQueue } from '@/lib/api';
@@ -39,7 +40,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           <h1 className="text-2xl font-extrabold tracking-tight">{clinic?.name ?? 'Clinic'}</h1>
           {clinic && <p className="text-sm text-muted">{clinic.address}</p>}
         </div>
-        <LanguageSwitch />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <LanguageSwitch />
+        </div>
       </header>
 
       {!clinic && <Card className="text-warn">{t('offline')}</Card>}

@@ -2,7 +2,11 @@
   "Common": {
     "switchLanguage": "اردو",
     "poweredBy": "Powered by ClinicQ",
-    "live": "Live"
+    "live": "Live",
+    "theme": "Theme: {mode}. Tap to change.",
+    "theme_system": "System",
+    "theme_light": "Light",
+    "theme_dark": "Dark"
   },
   "Home": {
     "book": "Book an appointment",

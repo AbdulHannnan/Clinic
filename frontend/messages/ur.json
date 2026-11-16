@@ -2,7 +2,11 @@
   "Common": {
     "switchLanguage": "English",
     "poweredBy": "Powered by ClinicQ",
-    "live": "لائیو"
+    "live": "لائیو",
+    "theme": "تھیم: {mode}۔ تبدیل کرنے کے لیے دبائیں۔",
+    "theme_system": "سسٹم",
+    "theme_light": "روشن",
+    "theme_dark": "گہرا"
   },
   "Home": {
     "book": "اپوائنٹمنٹ بک کریں",

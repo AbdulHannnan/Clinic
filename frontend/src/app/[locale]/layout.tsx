@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { isRtl, routing } from '@/i18n/routing';
+import { THEME_INIT_SCRIPT } from '@/lib/theme';
 import '../globals.css';
 
 const figtree = Figtree({ subsets: ['latin'], variable: '--font-figtree' });
@@ -23,6 +24,8 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   return (
     <html lang={locale} dir={isRtl(locale) ? 'rtl' : 'ltr'} className={`${figtree.variable} ${isRtl(locale) ? nastaliq.variable : ''}`}>
       <body className="font-sans antialiased">
+        {/* Apply the saved theme before first paint to avoid a flash of the wrong colours. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>
