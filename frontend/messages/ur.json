@@ -71,6 +71,8 @@
     "paid": "ادا شدہ",
     "markArrived": "حاضری لگائیں",
     "collectCash": "نقد وصول کریں",
+    "collectCard": "کارڈ وصول کریں",
+    "toCollect": "وصولی باقی ({count})",
     "noShow": "غیر حاضر",
     "queueEmpty": "قطار میں کوئی نہیں۔",
     "completed": "مکمل ({count})",

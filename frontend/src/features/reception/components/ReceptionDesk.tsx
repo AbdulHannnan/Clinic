@@ -154,6 +154,9 @@ export function ReceptionDesk() {
 
   const active = desk.entries.filter((e) => ACTIVE.has(e.status));
   const finished = desk.entries.filter((e) => !ACTIVE.has(e.status));
+  // Seen patients who still owe: the fee the doctor's "Done" leaves to be collected at the desk.
+  const toCollect = finished.filter((e) => e.balance > 0);
+  const outstanding = toCollect.reduce((sum, e) => sum + e.balance, 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -283,7 +286,43 @@ export function ReceptionDesk() {
             )}
           </div>
 
-          {/* Completed */}
+          {/* To collect: fees left after the doctor marks a patient "Done". Collecting here feeds the finance totals. */}
+          {toCollect.length > 0 && (
+            <Card className="flex flex-col gap-3 border-warn">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-warn">{t('toCollect', { count: toCollect.length })}</h2>
+                <span className="font-mono text-sm font-semibold text-warn" dir="ltr">
+                  {rs(outstanding)}
+                </span>
+              </div>
+              <ul className="flex flex-col gap-2">
+                {toCollect.map((e) => (
+                  <li key={e.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
+                    <span className="w-10 shrink-0 text-center font-mono text-lg font-semibold" dir="ltr">
+                      {e.token}
+                    </span>
+                    <span className="min-w-[8rem] flex-1 font-semibold">
+                      {e.name}
+                      <span className="ms-2 font-mono text-xs font-normal text-muted" dir="ltr">
+                        {e.phone}
+                      </span>
+                    </span>
+                    <span className="rounded-full bg-warn/15 px-2 py-0.5 text-xs font-bold text-warn">{t('due', { amount: rs(e.balance) })}</span>
+                    <div className="ms-auto flex flex-wrap gap-1">
+                      <button onClick={() => rowAction(e, `/finance/entry/${e.id}/collect`, { method: 'CASH' })} disabled={busyId === e.id} className="rounded-lg bg-accent px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-60">
+                        {t('collectCash')}
+                      </button>
+                      <button onClick={() => rowAction(e, `/finance/entry/${e.id}/collect`, { method: 'CARD' })} disabled={busyId === e.id} className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-semibold disabled:opacity-60">
+                        {t('collectCard')}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {/* Completed: the day's record. Unpaid ones are actioned in "To collect" above. */}
           {finished.length > 0 && (
             <details className="rounded-xl border border-line bg-surface px-3 py-2">
               <summary className="cursor-pointer text-sm font-semibold text-muted">{t('completed', { count: finished.length })}</summary>
@@ -295,10 +334,12 @@ export function ReceptionDesk() {
                     </span>
                     <span className="flex-1">{e.name}</span>
                     <span className="text-xs text-muted">{t(`status.${e.status}`)}</span>
-                    {e.balance > 0 && (
-                      <button onClick={() => rowAction(e, `/finance/entry/${e.id}/collect`, { method: 'CASH' })} disabled={busyId === e.id} className="rounded-lg border border-line px-2 py-0.5 text-xs font-semibold disabled:opacity-60">
-                        {t('collectCash')}
-                      </button>
+                    {e.balance > 0 ? (
+                      <span className="font-mono text-xs font-semibold text-warn" dir="ltr">
+                        {rs(e.balance)}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-ok">{t('paid')}</span>
                     )}
                   </li>
                 ))}

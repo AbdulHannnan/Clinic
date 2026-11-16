@@ -71,6 +71,8 @@
     "paid": "Paid",
     "markArrived": "Mark arrived",
     "collectCash": "Collect cash",
+    "collectCard": "Collect card",
+    "toCollect": "To collect ({count})",
     "noShow": "No-show",
     "queueEmpty": "No one in the queue.",
     "completed": "Completed ({count})",
