@@ -3,6 +3,7 @@ import { PaymentKind, QueueStatus, QueueType, balance, clinicDay, publicDoctorSt
 import { PrismaService } from '../../prisma/prisma.service';
 import { PatientsService } from '../patients/patients.service';
 import type { BookDto } from './dto/book.dto';
+import type { MeBookDto } from './dto/me-book.dto';
 import type { WalkInDto } from './dto/walk-in.dto';
 
 // Resolve "today" in the clinic's time zone (CLINIC_TIME_ZONE env overrides the default), never the server's.
@@ -30,26 +31,47 @@ export class QueueService {
       await this.prisma.patient.update({ where: { id: patient.id }, data: { birthYear: new Date().getFullYear() - dto.age } });
     }
 
+    const entry = await this.createOnlineEntry(doctorId, patient.id, doctor.fee, dto.symptoms ?? null);
+    return { id: entry.id, doctorId, token: entry.token, fee: entry.fee, payAtClinic: dto.payAtClinic ?? false };
+  }
+
+  /**
+   * A signed-in patient booking themselves onto today's queue (an ONLINE entry). Identity is the
+   * authenticated patient, so no phone is re-entered. If they already hold an active booking today for
+   * this doctor, that one is returned rather than a second token issued.
+   */
+  async bookForPatient(patientId: string, doctorId: string, dto: MeBookDto) {
+    const doctor = await this.prisma.doctor.findUnique({ where: { id: doctorId } });
+    if (!doctor) throw new NotFoundException('Doctor not found');
+
+    if (dto.age != null) {
+      await this.prisma.patient.update({ where: { id: patientId }, data: { birthYear: new Date().getFullYear() - dto.age } });
+    }
+
+    const active = await this.prisma.queueEntry.findFirst({
+      where: { doctorId, patientId, day: today(), status: { in: [QueueStatus.WAITING, QueueStatus.IN_ROOM] } },
+      select: { id: true, token: true, fee: true },
+    });
+    const entry = active ?? (await this.createOnlineEntry(doctorId, patientId, doctor.fee, dto.symptoms ?? null));
+    return { id: entry.id, doctorId, token: entry.token, fee: entry.fee, payAtClinic: dto.payAtClinic ?? false };
+  }
+
+  /**
+   * Create today's next ONLINE queue entry for a known patient. Token and sort order are read and the
+   * row written in one transaction so two bookings landing together can't take the same token; the DB's
+   * unique (doctor, day, token) is the final guard.
+   */
+  private createOnlineEntry(doctorId: string, patientId: string, fee: number, symptoms: string | null) {
     const day = today();
-    const entry = await this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const existing = await tx.queueEntry.findMany({ where: { doctorId, day }, select: { token: true, sortOrder: true } });
       // Numeric tokens only (emergencies are "E1" etc.); the next patient takes the highest + 1.
       const maxToken = existing.map((e) => parseInt(e.token, 10)).filter((n) => !Number.isNaN(n)).reduce((a, b) => Math.max(a, b), 0);
       const maxSort = existing.reduce((a, e) => Math.max(a, e.sortOrder), 0);
       return tx.queueEntry.create({
-        data: {
-          doctorId,
-          patientId: patient.id,
-          day,
-          token: String(maxToken + 1),
-          sortOrder: maxSort + 1,
-          type: QueueType.ONLINE,
-          fee: doctor.fee,
-          symptoms: dto.symptoms ?? null,
-        },
+        data: { doctorId, patientId, day, token: String(maxToken + 1), sortOrder: maxSort + 1, type: QueueType.ONLINE, fee, symptoms },
       });
     });
-    return { id: entry.id, doctorId, token: entry.token, fee: entry.fee, payAtClinic: dto.payAtClinic ?? false };
   }
 
   /** One patient's own view of where they stand: their status, how many are ahead, who is in now. */

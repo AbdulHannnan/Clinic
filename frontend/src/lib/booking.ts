@@ -1,4 +1,5 @@
-import { api, type BookInput, type BookResult, type BookingTrack } from './api';
+import { api, type BookInput, type BookResult, type BookingTrack, type MeBookInput } from './api';
+import { authedApi } from './auth';
 
 // Patients have no login: their own booking (the capability id + token) lives in this browser only.
 const key = (doctorId: string) => `clinic_booking_${doctorId}`;
@@ -36,6 +37,10 @@ export function clearBooking(doctorId: string): void {
 
 export const book = (doctorId: string, input: BookInput) =>
   api<BookResult>(`/queue/${doctorId}/book`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
+
+/** A signed-in patient booking themselves onto a doctor's queue. Throws 'UNAUTHORIZED' on an expired token. */
+export const bookAsPatient = (token: string, doctorId: string, input: MeBookInput) =>
+  authedApi<BookResult>(token, `/queue/${doctorId}/me/book`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
 
 export const trackBooking = (entryId: string) => api<BookingTrack>(`/queue/entry/${entryId}`);
 export const markArrived = (entryId: string) => api<BookingTrack>(`/queue/entry/${entryId}/arrived`, { method: 'POST' });

@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { QueueService } from './queue.service';
 import { BookDto } from './dto/book.dto';
+import { MeBookDto } from './dto/me-book.dto';
 import { WalkInDto } from './dto/walk-in.dto';
 import { CuidPipe } from '../../common/pipes/cuid.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -34,6 +35,16 @@ export class QueueController {
   @Get('me')
   myStatus(@CurrentPatient() patient: PatientPrincipal) {
     return this.queue.myStatus(patient.id);
+  }
+
+  // Patient portal: the signed-in patient books themselves onto today's queue (no phone re-entry).
+  @UseGuards(PatientAuthGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  @Post(':doctorId/me/book')
+  async bookMe(@Param('doctorId', CuidPipe) doctorId: string, @CurrentPatient() patient: PatientPrincipal, @Body() dto: MeBookDto) {
+    const booking = await this.queue.bookForPatient(patient.id, doctorId, dto);
+    await this.broadcast(doctorId);
+    return booking;
   }
 
   // Patient self-booking. Public, but rate-limited so the queue can't be flooded.

@@ -172,6 +172,8 @@
     "signInPrompt": "Please sign in to see your visit.",
     "signInCta": "Go to sign in",
     "noBooking": "You have no booking today.",
+    "bookHeading": "Book your visit",
+    "bookingAs": "Booking as {name}",
     "yourToken": "Your token",
     "nowServing": "Now serving",
     "none": "—",

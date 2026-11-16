@@ -93,6 +93,46 @@ test('QueueService.callNext: returns null (and calls nobody) when the queue is e
   assert.equal(await svc.callNext('d'), null);
 });
 
+test('QueueService.bookForPatient: reuses an existing active booking instead of issuing a second token', async () => {
+  let transacted = false;
+  const svc = new QueueService(
+    fakePrisma({
+      doctor: { findUnique: async () => ({ id: 'd', fee: 1500 }) },
+      queueEntry: { findFirst: async () => ({ id: 'q1', token: '5', fee: 1500 }) },
+      $transaction: async () => {
+        transacted = true;
+        return {};
+      },
+    }),
+    stubPatients,
+  );
+  const res = await svc.bookForPatient('p1', 'd', {});
+  assert.equal(res.id, 'q1');
+  assert.equal(res.token, '5');
+  assert.equal(transacted, false); // no new entry created
+});
+
+test('QueueService.bookForPatient: creates the next ONLINE entry when the patient has none active today', async () => {
+  const tx = {
+    queueEntry: {
+      findMany: async () => [{ token: '7', sortOrder: 7 }],
+      create: async (args: { data: Record<string, unknown> }) => ({ id: 'q2', token: args.data.token, fee: args.data.fee }),
+    },
+  };
+  const svc = new QueueService(
+    fakePrisma({
+      doctor: { findUnique: async () => ({ id: 'd', fee: 1500 }) },
+      queueEntry: { findFirst: async () => null }, // no active booking today
+      $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx),
+    }),
+    stubPatients,
+  );
+  const res = await svc.bookForPatient('p1', 'd', { symptoms: 'cough', payAtClinic: false });
+  assert.equal(res.token, '8'); // 7 + 1
+  assert.equal(res.fee, 1500);
+  assert.equal(res.payAtClinic, false);
+});
+
 test('PaymentsService.applyDiscount: an online overpayment is refunded in the same transaction', async () => {
   const entry = { id: 'q1', status: 'DONE', fee: 1500, discount: 0, payments: [{ kind: 'PAYMENT', method: 'ONLINE', amount: 1500 }] };
   let refund: Record<string, unknown> | undefined;

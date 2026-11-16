@@ -150,6 +150,13 @@ export interface BookResult {
   payAtClinic: boolean;
 }
 
+/** A signed-in patient booking themselves (`POST /queue/:doctorId/me/book`). Identity comes from the token. */
+export interface MeBookInput {
+  symptoms?: string;
+  age?: number;
+  payAtClinic?: boolean;
+}
+
 export interface BookingTrack {
   id: string;
   doctorId: string;

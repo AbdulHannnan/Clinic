@@ -172,6 +172,8 @@
     "signInPrompt": "اپنی ملاقات دیکھنے کے لیے سائن اِن کریں۔",
     "signInCta": "سائن اِن پر جائیں",
     "noBooking": "آج آپ کی کوئی بکنگ نہیں ہے۔",
+    "bookHeading": "اپنی ملاقات بک کریں",
+    "bookingAs": "بطور {name} بکنگ",
     "yourToken": "آپ کا ٹوکن",
     "nowServing": "اب باری",
     "none": "—",
